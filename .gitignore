@@ -1,0 +1,8 @@
+# Ignore everything
+/*
+
+# Except the following directories and files
+!Assets/
+!ProjectSettings/
+!Packages/
+!.gitignore
