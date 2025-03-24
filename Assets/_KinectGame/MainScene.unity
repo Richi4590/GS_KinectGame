@@ -196,7 +196,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 300}
-  m_LocalScale: {x: 48.3, y: 1, z: 27.5}
+  m_LocalScale: {x: 48.7, y: 1, z: 27.4}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1988608401}
@@ -290,11 +290,16 @@ MonoBehaviour:
   DepthSourceManager: {fileID: 1022827879}
   ObjectPrefab: {fileID: 6662532282616018069, guid: 05a4c3079460c124ba48a3c74b91a642, type: 3}
   spawnedObjectsParentRoot: {fileID: 328384189}
-  MinDepth: 747
-  MaxDepth: 751
+  MinDepth: 738
+  MaxDepth: 753
+  minBlobSizesToRemove: 1400
+  dilationIterations: 2
+  erosionIterations: 2
+  borderThickness: 0
   SpawnedObjectsZOffset: 1
-  useCustomScaling: 1
-  customScaling: {x: 1, y: 1, z: 1}
+  useCustomScaling: 0
+  scaleDivider: 4
+  framesToWait: 5
 --- !u!1 &328384188
 GameObject:
   m_ObjectHideFlags: 0
@@ -1199,7 +1204,7 @@ Camera:
   far clip plane: 400
   field of view: 60
   orthographic: 1
-  orthographic size: 135.2
+  orthographic size: 136.97
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
