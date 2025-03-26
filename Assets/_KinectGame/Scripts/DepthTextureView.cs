@@ -30,6 +30,9 @@ public class DepthObjectDetector : MonoBehaviour
     public int framesToWait = 10;
     public bool showDebugCenterPos = false;
 
+    public bool flipDepthMapX = false;
+    public bool flipDepthMapY = false;
+
     private KinectSensor _Sensor;
     private DepthSourceManager _DepthManager;
     private int _DepthWidth = 512;
@@ -120,9 +123,15 @@ public class DepthObjectDetector : MonoBehaviour
     void ProcessDepthData(ushort[] depthData)
     {
         if (depthData == null) return;
-
         // Convert depth data to OpenCV Mat
         Mat depthMat = new Mat(_DepthHeight, _DepthWidth, MatType.CV_16UC1, depthData);
+
+        if (flipDepthMapX)
+            Cv2.Flip(depthMat, depthMat, FlipMode.X);
+
+        if (flipDepthMapY)
+            Cv2.Flip(depthMat, depthMat, FlipMode.Y);
+
         Cv2.InRange(depthMat, MinDepth, MaxDepth, _BinaryImage);
 
         // Remove edge-connected components

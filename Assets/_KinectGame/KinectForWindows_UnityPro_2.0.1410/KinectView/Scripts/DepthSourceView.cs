@@ -106,7 +106,8 @@ public class DepthSourceView : MonoBehaviour
         {
             return;
         }
-        
+
+                /*
         if (Input.GetButtonDown("Fire1"))
         {
             if(ViewMode == DepthViewMode.MultiSourceReader)
@@ -118,16 +119,18 @@ public class DepthSourceView : MonoBehaviour
                 ViewMode = DepthViewMode.MultiSourceReader;
             }
         }
-        
-        float yVal = Input.GetAxis("Horizontal");
-        float xVal = -Input.GetAxis("Vertical");
+
+        //float yVal = Input.GetAxis("Horizontal");
+        //float xVal = -Input.GetAxis("Vertical");
+
 
         transform.Rotate(
             (xVal * Time.deltaTime * _Speed), 
             (yVal * Time.deltaTime * _Speed), 
             0, 
             Space.Self);
-            
+          */
+
         if (ViewMode == DepthViewMode.SeparateSourceReaders)
         {
             if (ColorSourceManager == null)
