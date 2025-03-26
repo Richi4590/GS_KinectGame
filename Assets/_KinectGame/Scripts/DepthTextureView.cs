@@ -61,7 +61,7 @@ public class DepthObjectDetector : MonoBehaviour
         _Centroids = new Mat();
         objectBounds = new List<Rect>();
 
-        StartCoroutine(ExecuteEveryNFrames(framesToWait));
+        StartCoroutine(ExecuteEveryNFrames());
     }
 
     void Update()
@@ -70,12 +70,12 @@ public class DepthObjectDetector : MonoBehaviour
     }
 
     // Coroutine that will execute every N frames
-    IEnumerator ExecuteEveryNFrames(int waitForFrames)
+    IEnumerator ExecuteEveryNFrames()
     {
         while (true)
         {
             // Wait for N frames
-            yield return new WaitForSeconds(1f / ((int)(1.0f / Time.smoothDeltaTime)) * waitForFrames);  
+            yield return new WaitForSeconds(1f / ((int)(1.0f / Time.smoothDeltaTime)) * framesToWait);  
             ClearSpawnedObjects();
             ProcessDepthData(_DepthManager.GetData());
             //InstantiateObjectsFromBounds(objectBounds);
@@ -234,23 +234,24 @@ public class DepthObjectDetector : MonoBehaviour
                 //BOUNDS GEN
 
                 // Convert 2D depth positions to world positions
-                Vector3[] worldPoints = new Vector3[contour.Length];
+                Vector2[] worldPoints = new Vector2[contour.Length];
                 for (int i = 0; i < contour.Length; i++)
                 {
                     Vector2 viewportPoint = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
                     worldPoints[i] = new Vector3(viewportPoint.x, viewportPoint.y, 0); // Set Z to 0 initially
                 }
 
+                worldPoints = SimplifyPolygon(worldPoints, simplificationTolerance);
+
                 // Get bounding box (optional, for debugging)
                 OpenCvSharp.Rect boundingBox = Cv2.BoundingRect(contour);
                 objectBounds.Add(new Rect(boundingBox.X, boundingBox.Y, boundingBox.Width, boundingBox.Height));
 
                 // Compute center of the bounding box in world space
-                Vector3 gameObjectWorldPosition = DepthToViewport(new Vector2(boundingBox.X + boundingBox.Width / 2, boundingBox.Y + boundingBox.Height / 2));
-                gameObjectWorldPosition.z = 0.0f;
+                Vector2 gameObjectWorldPosition = DepthToViewport(new Vector2(boundingBox.X + boundingBox.Width / 2, boundingBox.Y + boundingBox.Height / 2));
 
                 // Create a new GameObject
-                GameObject obj = Instantiate(ObjectPrefab, gameObjectWorldPosition, ObjectPrefab.transform.rotation, spawnedObjectsParentRoot);
+                GameObject obj = Instantiate(ObjectPrefab, spawnedObjectsParentRoot.transform.InverseTransformPoint(gameObjectWorldPosition), ObjectPrefab.transform.rotation, spawnedObjectsParentRoot);
                 obj.transform.localPosition = new Vector3(obj.transform.localPosition.x, obj.transform.localPosition.y, 0);
                 obj.transform.localScale = generated2DMeshObjScale;
                 _SpawnedObjects.Add(obj);
@@ -258,7 +259,7 @@ public class DepthObjectDetector : MonoBehaviour
                 //DEBUG CENTROID OBJ GEN
                 if (showDebugCenterPos)
                 {
-                    Vector3 centerWorldPos = new Vector3(gameObjectWorldPosition.x, gameObjectWorldPosition.y, gameObjectWorldPosition.z);
+                    Vector2 centerWorldPos = new Vector3(gameObjectWorldPosition.x, gameObjectWorldPosition.y);
                     GameObject centerObj = Instantiate(DebugObjectCenterPrefab, centerWorldPos, ObjectPrefab.transform.rotation, spawnedObjectsParentRoot);
                     centerObj.transform.localPosition = new Vector3(centerObj.transform.localPosition.x, centerObj.transform.localPosition.y, -0.2f);
                     centerObj.transform.localScale *= 5;
@@ -276,26 +277,20 @@ public class DepthObjectDetector : MonoBehaviour
                 if (!obj.TryGetComponent<PolygonCollider2D>(out PolygonCollider2D polygonCollider))
                     polygonCollider = obj.AddComponent<PolygonCollider2D>();
 
-                // Ensure collider vertices match sprite scaling
-                Vector2[] colliderVertices = new Vector2[worldPoints.Length];
-                for (int i = 0; i < worldPoints.Length; i++)
-                {
-                    colliderVertices[i] = new Vector2(worldPoints[i].x, worldPoints[i].y);
-                }
 
-                colliderVertices = SimplifyPolygon(colliderVertices, simplificationTolerance);
+                //colliderVertices = SimplifyPolygon(colliderVertices, simplificationTolerance);
 
                 Vector2 centroid = new Vector2(obj.transform.localPosition.x, obj.transform.localPosition.y);
 
                 // Offset the collider points to align with the sprite
-                for (int i = 0; i < colliderVertices.Length; i++)
+                for (int i = 0; i < worldPoints.Length; i++)
                 {
-                    colliderVertices[i] -= centroid; // Center it to match sprite positioning
-                    colliderVertices[i] /= generated2DMeshObjScale.x;  // Scale correction
+                    worldPoints[i] -= centroid; // Center it to match sprite positioning
+                    worldPoints[i] /= generated2DMeshObjScale.x;  // Scale correction
                 }
 
                 // Apply to collider
-                polygonCollider.SetPath(0, colliderVertices);
+                polygonCollider.SetPath(0, worldPoints);
             }
         }
     }
@@ -527,7 +522,7 @@ public class DepthObjectDetector : MonoBehaviour
         return _MainCamera.ViewportToWorldPoint(new Vector3((x + 1) / 2, (y + 1) / 2, 0));
     }
 
-    Sprite CreateSpriteFromContour(Vector3[] worldPoints)
+    Sprite CreateSpriteFromContour(Vector2[] worldPoints)
     {
         // Convert the 3D points to 2D points by ignoring the Z component
         Vector2[] contour2D = new Vector2[worldPoints.Length];
