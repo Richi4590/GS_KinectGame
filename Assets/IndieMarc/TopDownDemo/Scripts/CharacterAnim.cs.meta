@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: d8b153895a8d9dd4fa1368f22e63bcf5
+timeCreated: 1563998058
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Scripts/CharacterAnim.cs
+  uploadId: 322227

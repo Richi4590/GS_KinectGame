@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ee4ee680d5c0ebc498c369b9686b7fec
+timeCreated: 1546884093
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Sprites/CharacterRight.anim
+  uploadId: 322227

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 17809628ed110b342a9634c0e61c068a
+timeCreated: 1546888773
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Sprites/CharacterLeft.anim
+  uploadId: 322227

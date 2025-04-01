@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 4d84f50963c3c5b4582599f58f8c4d4b
+timeCreated: 1547164379
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Sprites/CharacterIdleLeft.anim
+  uploadId: 322227

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 40719914b58d22e47b967676d7a6dc5d
+timeCreated: 1547164408
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Sprites/CharacterIdleRightHold.anim
+  uploadId: 322227

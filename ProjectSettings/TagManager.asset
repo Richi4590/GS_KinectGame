@@ -3,17 +3,18 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - GeneratedMeshObject
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - WalkableBridge
   - Water
   - UI
   - 
   - 
-  - 
+  - Platforms
   - 
   - 
   - 
@@ -40,4 +41,10 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Perspective
+    uniqueID: 3420322187
+    locked: 0
+  - name: Top
+    uniqueID: 282671577
     locked: 0

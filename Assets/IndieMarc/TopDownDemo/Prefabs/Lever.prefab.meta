@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 53c58bc6c3503964f9fa07506a7b13d2
+timeCreated: 1548206199
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Prefabs/Lever.prefab
+  uploadId: 322227

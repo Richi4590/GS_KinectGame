@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 2b4c09693691e204a84dcc8446966a42
+timeCreated: 1547168110
+licenseType: Store
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 137981
+  packageName: Simple 2D Template
+  packageVersion: 1.2
+  assetPath: Assets/IndieMarc/TopDownDemo/Materials/Sprite3D-diffuse.shader
+  uploadId: 322227
