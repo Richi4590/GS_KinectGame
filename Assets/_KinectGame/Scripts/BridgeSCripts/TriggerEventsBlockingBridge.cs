@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider2D))]
-public class TriggerEvents : MonoBehaviour
+public class TriggerEventsBlockingBridge : MonoBehaviour
 {
-    public WalkableArea walkArea;
+    public BlockingBridge walkArea;
     private HashSet<GameObject> bridgesInside = new HashSet<GameObject>();
 
     // Start is called before the first frame update

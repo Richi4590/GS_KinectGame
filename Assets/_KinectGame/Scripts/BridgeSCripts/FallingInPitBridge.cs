@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(CompositeCollider2D), typeof(PolygonCollider2D))]
-public class WalkableArea : MonoBehaviour
+public class FallingInPitBridge : MonoBehaviour
 {
     [Header("Blocking Area Settings")]
     public Vector2 areaSize = new Vector2(5, 2);
@@ -11,7 +11,7 @@ public class WalkableArea : MonoBehaviour
     private CompositeCollider2D compositeCollider;
     private PolygonCollider2D polygonCollider;
 
-    [SerializeField] private TriggerEvents triggerArea;
+    [SerializeField] private TriggerEventsFallingBridge triggerArea;
 
     private void Awake()
     {
@@ -67,8 +67,7 @@ public class WalkableArea : MonoBehaviour
             {
                 GameObject holeObject = new GameObject("BridgeHole");
                 holeObject.transform.localScale = DepthObjectDetectorTopDown.Instance.generated2DMeshObjScale;
-                holeObject.transform.SetParent(transform);
-                holeObject.transform.position = bridge.transform.position;
+                holeObject.transform.SetParent(transform);                holeObject.transform.position = bridge.transform.position;
 
                 PolygonCollider2D holeCollider = holeObject.AddComponent<PolygonCollider2D>();
                 holeCollider.pathCount = bridgeCollider.pathCount;

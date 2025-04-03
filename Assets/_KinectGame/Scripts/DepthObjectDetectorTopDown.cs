@@ -856,9 +856,9 @@ public class DepthObjectDetectorTopDown : MonoBehaviour
     private void OnApplicationQuit()
     {
         if (_Sensor != null && _Sensor.IsOpen) _Sensor.Close();
-        _BinaryImage.Dispose();
-        _Labels.Dispose();
-        _Stats.Dispose();
-        _Centroids.Dispose();
+        if (_BinaryImage != null) _BinaryImage.Dispose();
+        if (_Labels != null) _Labels.Dispose();
+        if (_Stats != null) _Stats.Dispose();
+        if (_Centroids != null) _Centroids.Dispose();
     }
 }
