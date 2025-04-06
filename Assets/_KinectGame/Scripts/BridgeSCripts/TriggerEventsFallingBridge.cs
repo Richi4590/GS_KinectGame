@@ -1,3 +1,4 @@
+using IndieMarc.Platformer;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,11 +10,13 @@ public class TriggerEventsFallingBridge : MonoBehaviour
     public FallingInPitBridge walkArea;
     public float overlapThreshold = 0.5f;
     private HashSet<GameObject> bridgesInside = new HashSet<GameObject>();
-    private Collider2D triggerCollider;
+    private CompositeCollider2D triggerCollider;
+    private Coroutine currentCoroutine = null;
+
     // Start is called before the first frame update
     void Start()
     {
-        triggerCollider = GetComponent<Collider2D>();
+        triggerCollider = GetComponent<CompositeCollider2D>();
     }
 
     // Update is called once per frame
@@ -45,12 +48,10 @@ public class TriggerEventsFallingBridge : MonoBehaviour
 
         if (collision.gameObject.tag == "Player")
         {
-            if (Utilities.IsColliderInside(collision, triggerCollider, overlapThreshold))
+            if (currentCoroutine == null && Utilities.IsColliderInside(collision, triggerCollider, overlapThreshold))
             {
                 Vector3 objPosition = collision.gameObject.transform.position;
                 StartCoroutine(MoveToTargetScaleAndResetPos(collision.gameObject.transform, new Vector3(triggerCollider.transform.position.x, objPosition.y, objPosition.z), 2f)); // Example duration of 2 seconds
-
-
             }
         }
     }
@@ -73,33 +74,44 @@ public class TriggerEventsFallingBridge : MonoBehaviour
     {
         if (obj == null) yield break;
 
-        // Store the original scale
-        Vector3 originalScale = obj.localScale;
-
-        // Position the object on the same X-axis
-        obj.position = target;
-
-        // Scaling down over time
-        float elapsedTime = 0f;
-        while (elapsedTime < duration)
+        IEnumerator MoveToTargetScaleAndResetPosCoroutine(Transform obj, Vector3 target, float duration)
         {
-            float scaleFactor = Mathf.Lerp(originalScale.x, 0.1f, elapsedTime / duration);
-            obj.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+            obj.gameObject.GetComponent<IndieMarc.TopDown.PlayerControls>().canMove = false;
 
-            elapsedTime += Time.deltaTime;
-            yield return null;
+            // Store the original scale
+            Vector3 originalScale = obj.localScale;
+
+            // Position the object on the same X-axis
+            obj.position = target;
+
+            // Scaling down over time
+            float elapsedTime = 0f;
+            while (elapsedTime < duration)
+            {
+                float scaleFactor = Mathf.Lerp(originalScale.x, 0.1f, elapsedTime / duration);
+                obj.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            // Ensure final scale is approximately 0.1
+            obj.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+
+            // Wait a short moment
+            yield return new WaitForSeconds(0.5f);
+
+            obj.transform.position = obj.GetComponent<LastValidPosition>().GetLastValidPosition();
+            // Reset the scale back to original
+            obj.localScale = originalScale;
+            obj.gameObject.GetComponent<IndieMarc.TopDown.PlayerControls>().canMove = true;
         }
 
-        // Ensure final scale is approximately 0.1
-        obj.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        currentCoroutine = StartCoroutine(MoveToTargetScaleAndResetPosCoroutine(obj, target, duration));
 
-        // Wait a short moment
-        yield return new WaitForSeconds(0.5f);
+        yield return currentCoroutine;
+        currentCoroutine = null;
 
-        // Reset the scale back to original
-        obj.localScale = originalScale;
-
-        obj.transform.position = obj.GetComponent<LastValidPosition>().GetLastValidPosition();
     }
 
 

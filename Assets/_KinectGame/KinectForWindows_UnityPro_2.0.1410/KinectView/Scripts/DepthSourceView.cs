@@ -95,9 +95,9 @@ public class DepthSourceView : MonoBehaviour
     
     void OnGUI()
     {
-        GUI.BeginGroup(new Rect(0, 0, Screen.width, Screen.height));
-        GUI.TextField(new Rect(Screen.width - 250 , 10, 250, 20), "DepthMode: " + ViewMode.ToString());
-        GUI.EndGroup();
+        //GUI.BeginGroup(new Rect(0, 0, Screen.width, Screen.height));
+        //GUI.TextField(new Rect(Screen.width - 250 , 10, 250, 20), "DepthMode: " + ViewMode.ToString());
+        //GUI.EndGroup();
     }
 
     void Update()
