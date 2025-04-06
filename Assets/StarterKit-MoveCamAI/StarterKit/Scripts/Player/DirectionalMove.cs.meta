@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: fa0c91855c1eb2f46a3498b2dd030db4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Scripts/Player/DirectionalMove.cs
+  uploadId: 49719

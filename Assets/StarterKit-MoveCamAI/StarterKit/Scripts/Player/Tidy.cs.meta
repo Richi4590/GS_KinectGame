@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 90de6bbe217d45f43a970414c33c1b47
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Scripts/Player/Tidy.cs
+  uploadId: 49719

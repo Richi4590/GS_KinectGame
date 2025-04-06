@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 59945dece27e7614b9aae48d188769ce
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Prefabs/Enemy.prefab
+  uploadId: 49719

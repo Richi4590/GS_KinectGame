@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2f015940e2393b64ab612caa46710e89
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Prefabs/LastPos.prefab
+  uploadId: 49719

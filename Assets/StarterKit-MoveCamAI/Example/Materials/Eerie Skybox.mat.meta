@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5cb2899aad6534743b2f81f83707c447
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/Example/Materials/Eerie Skybox.mat
+  uploadId: 49719

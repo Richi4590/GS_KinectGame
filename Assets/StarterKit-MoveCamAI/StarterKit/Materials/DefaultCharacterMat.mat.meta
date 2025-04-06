@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d175f4275eb3cff41b5a5a1914304ba6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Materials/DefaultCharacterMat.mat
+  uploadId: 49719

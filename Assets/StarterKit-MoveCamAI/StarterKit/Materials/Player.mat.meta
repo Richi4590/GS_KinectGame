@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5f027d7123fa73f48b2964473f219594
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Materials/Player.mat
+  uploadId: 49719

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9c5194d8f537aab4aa010b7a2af70ded
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 18071
+  packageName: Starter Kit | Movement, Camera & AI
+  packageVersion: 1.3
+  assetPath: Assets/StarterKit-MoveCamAI/StarterKit/Materials/Enemy.mat
+  uploadId: 49719
