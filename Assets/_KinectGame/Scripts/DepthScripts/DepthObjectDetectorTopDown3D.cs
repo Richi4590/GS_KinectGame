@@ -35,9 +35,12 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public bool flipDepthMapX = false;
     public bool flipDepthMapY = false;
 
-    public int framesToWait = 10;
     public float maxAllowedMovementRadius = 1f;
     public float collisionWallHeight = 5f;
+    public bool visualizeWithLines = true;
+    public float lineWidth = 0.1f;
+    public Color lineColor = Color.cyan;
+    public int framesToWait = 10;
 
     private KinectSensor _Sensor;
     private DepthSourceManager _DepthManager;
@@ -54,6 +57,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     private Mat _Labels;
     private Mat _Stats;
     private Mat _Centroids;
+    private Vector3[] worldPoints3D;
 
     private bool DEBUG_FloodFill_Mask = false;
 
@@ -281,7 +285,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
 
             // Create 3D positions on XZ plane
-            Vector3[] worldPoints3D = new Vector3[simplified.Length];
+            worldPoints3D = new Vector3[simplified.Length];
+
             for (int i = 0; i < simplified.Length; i++)
             {
                 worldPoints3D[i] = new Vector3(simplified[i].x, depthTextureVisualDestinationMesh.transform.position.y, simplified[i].y);
@@ -322,6 +327,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 obj = closestObject;
                 obj.transform.position = center3D;
                 trackedObjects[obj] = newCenter2D;
+
+                if (!_SpawnedObjects.Contains(obj))
+                    _SpawnedObjects.Add(obj);
             }
             else
             {
@@ -332,36 +340,46 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                     Quaternion.identity,
                     depthTextureVisualDestinationMesh.transform
                 );
-                _SpawnedObjects.Add(obj);
                 trackedObjects[obj] = newCenter2D;
+
+                _SpawnedObjects.Add(obj);
             }
 
+            GameObject childPlaneObj = obj.transform.GetChild(0).gameObject;
             updatedObjects.Add(obj);
 
             Vector3 localCenter = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(center3D);
             VisualizeWorldPoints3D(obj, worldPoints3D);
 
-            // Generate and assign mesh
-            Mesh mesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
-            if (mesh != null)
+            Mesh planeMesh = TriangulateFull(worldPoints3D, localCenter, collisionWallHeight);
+            Mesh wallMesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
+
+            if (wallMesh != null)
             {
-                if (!obj.TryGetComponent<MeshFilter>(out var meshFilter))
-                    meshFilter = obj.AddComponent<MeshFilter>();
-                meshFilter.mesh = mesh;
+                if (!childPlaneObj.TryGetComponent<MeshFilter>(out var meshFilter))
+                    meshFilter = childPlaneObj.AddComponent<MeshFilter>();
+                meshFilter.mesh = planeMesh;
+
+                if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
+                    childMeshCollider = obj.AddComponent<MeshCollider>();
+                childMeshCollider.sharedMesh = planeMesh;
+
+                //------------
 
                 if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
                     meshRenderer = obj.AddComponent<MeshRenderer>();
                 meshRenderer.material = TopDownObjectPrefab3D.GetComponent<MeshRenderer>().sharedMaterial;
 
+                // Optional: Enable mesh collider
                 if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
                     meshCollider = obj.AddComponent<MeshCollider>();
-                meshCollider.sharedMesh = mesh;
+                meshCollider.sharedMesh = wallMesh;
             }
             else
             {
                 Debug.LogWarning("Failed to create mesh for object with contour.");
             }
-        }
+    }
 
         // Remove objects not updated
         List<GameObject> toRemove = new List<GameObject>();
@@ -435,7 +453,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
 
                 // Convert 2D contour positions to world positions
-                Vector3[] worldPoints3D = new Vector3[simplified.Length];
+                worldPoints3D = new Vector3[simplified.Length];
 
                 for (int i = 0; i < simplified.Length; i++)
                 {
@@ -479,21 +497,29 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                     depthTextureVisualDestinationMesh.transform
                 );
 
+                GameObject childPlaneObj = obj.transform.GetChild(0).gameObject;
+
                 _SpawnedObjects.Add(obj);
 
                 Vector3 localCenter = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(center3D);
 
+                if (visualizeWithLines)
+                    VisualizeWorldPoints3D(obj, worldPoints3D);
 
-                VisualizeWorldPoints3D(obj, worldPoints3D);
+                Mesh planeMesh = TriangulateFull(worldPoints3D, localCenter, collisionWallHeight);
+                Mesh wallMesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
 
-                // Generate shape-based mesh
-                Mesh mesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
-
-                if (mesh != null)
+                if (wallMesh != null)
                 {
-                    if (!obj.TryGetComponent<MeshFilter>(out var meshFilter))
-                        meshFilter = obj.AddComponent<MeshFilter>();
-                    meshFilter.mesh = mesh;
+                    if (!childPlaneObj.TryGetComponent<MeshFilter>(out var meshFilter))
+                        meshFilter = childPlaneObj.AddComponent<MeshFilter>();
+                    meshFilter.mesh = planeMesh;
+                    
+                    if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
+                        childMeshCollider = obj.AddComponent<MeshCollider>();
+                    childMeshCollider.sharedMesh = planeMesh;
+
+                    //------------
 
                     if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
                         meshRenderer = obj.AddComponent<MeshRenderer>();
@@ -502,7 +528,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                     // Optional: Enable mesh collider
                     if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
                         meshCollider = obj.AddComponent<MeshCollider>();
-                   meshCollider.sharedMesh = mesh;
+                   meshCollider.sharedMesh = wallMesh;
                 }
                 else
                 {
@@ -512,9 +538,41 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
     }
 
-    Mesh ExtrudePolygon(Vector3[] worldPoints3D, Vector3 center, float height)
+
+    public Mesh TriangulateFull(Vector3[] points, Vector3 center, float height)
     {
-        int n = worldPoints3D.Length;
+        if (points.Length < 3) return null;
+
+        // Project to 2D (XZ or XY depending on plane)
+        Vector3[] points3D = new Vector3[points.Length];
+        Vector2[] points2D = new Vector2[points.Length];
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            Vector3 correct3DPoint = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(worldPoints3D[i]);
+
+            Vector3 local = correct3DPoint - center;
+
+            points2D[i] = new Vector2(local.x, local.z);
+            points3D[i] = local;
+        }
+
+        // Triangulate
+        Triangulator tr = new Triangulator(points2D);
+        int[] indices = tr.Triangulate();
+
+        // Build mesh
+        Mesh mesh = new Mesh();
+        mesh.vertices = points3D;
+        mesh.triangles = indices;
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    Mesh ExtrudePolygon(Vector3[] points, Vector3 center, float height)
+    {
+        int n = points.Length;
         float halfHeight = height / 2f;
 
         // Shift points relative to center
@@ -522,8 +580,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         Vector3[] bottom = new Vector3[n];
         for (int i = 0; i < n; i++)
         {
-            worldPoints3D[i] = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(worldPoints3D[i]);
-            Vector3 local = worldPoints3D[i] - center;
+            Vector3 correct3DPoint = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(points[i]);
+            Vector3 local = correct3DPoint - center;
             bottom[i] = local - Vector3.up * halfHeight;
             top[i] = local + Vector3.up * halfHeight;
         }
@@ -572,21 +630,28 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     void VisualizeWorldPoints3D(GameObject obj, Vector3[] worldPoints3D)
     {
         // Create a GameObject to hold the LineRenderer
-        if (!obj.TryGetComponent<LineRenderer>(out LineRenderer lineRenderer)) 
+        if (!obj.TryGetComponent<LineRenderer>(out LineRenderer lineRenderer))
+        {
             lineRenderer = obj.AddComponent<LineRenderer>();
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        }
+
+        // Create a new array that includes the first point at the end
+        Vector3[] closedLoopPoints = new Vector3[worldPoints3D.Length + 1];
+        worldPoints3D.CopyTo(closedLoopPoints, 0);
+        closedLoopPoints[closedLoopPoints.Length - 1] = worldPoints3D[0]; // close the loop
 
         // Set LineRenderer properties
-        lineRenderer.positionCount = worldPoints3D.Length; // Set the number of points
-        lineRenderer.startWidth = 0.1f; // Adjust the line width as needed
-        lineRenderer.endWidth = 0.1f;   // Same width for both ends (adjust as needed)
-        lineRenderer.material = new Material(Shader.Find("Sprites/Default")); // Use default material
+        lineRenderer.positionCount = closedLoopPoints.Length;
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
 
         // Set the positions for the LineRenderer
-        lineRenderer.SetPositions(worldPoints3D);
+        lineRenderer.SetPositions(closedLoopPoints);
 
         // Optional: Make the lines more visible (e.g., color them red)
-        lineRenderer.startColor = Color.cyan;
-        lineRenderer.endColor = Color.cyan;
+        lineRenderer.startColor = lineColor;
+        lineRenderer.endColor = lineColor;
     }
 
     public static Vector2[] SimplifyPolygon(Vector2[] points, float tolerance)
