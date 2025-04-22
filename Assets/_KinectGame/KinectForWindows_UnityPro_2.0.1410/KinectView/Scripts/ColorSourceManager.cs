@@ -7,6 +7,7 @@ public class ColorSourceManager : MonoBehaviour
     public int ColorWidth { get; private set; }
     public int ColorHeight { get; private set; }
 
+    public static ColorSourceManager Instance;
     private KinectSensor _Sensor;
     private ColorFrameReader _Reader;
     private Texture2D _Texture;
@@ -16,7 +17,16 @@ public class ColorSourceManager : MonoBehaviour
     {
         return _Texture;
     }
-    
+
+    void Awake()
+    {
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(this);
+    }
+
+
     void Start()
     {
         _Sensor = KinectSensor.GetDefault();

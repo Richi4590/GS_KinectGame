@@ -117,13 +117,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4035577928670319518}
+  - component: {fileID: -8942182248145201822}
   - component: {fileID: 7385383793465189577}
   - component: {fileID: 6125789963183704736}
   - component: {fileID: 5420226506030738918}
   - component: {fileID: 7759854340579345937}
   - component: {fileID: 9003098484649230243}
   m_Layer: 0
-  m_Name: TopDown3DPrefab
+  m_Name: DefaultTopDown3DPrefab
   m_TagString: GeneratedMeshObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -145,6 +146,19 @@ Transform:
   - {fileID: 290368777197316068}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-8942182248145201822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6662532282616018069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cff28c01d38d344cbe44e89f2136aec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Tag: 
 --- !u!33 &7385383793465189577
 MeshFilter:
   m_ObjectHideFlags: 0
