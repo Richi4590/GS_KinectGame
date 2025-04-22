@@ -5,12 +5,13 @@ using Windows.Kinect;
 using Rect = UnityEngine.Rect;
 using System.Collections;
 using System.Linq;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 using UnityEngine.Rendering;
 using AYellowpaper.SerializedCollections;
 using System;
 using ZXing;
 using OpenCvSharp.Util;
+using System.Runtime.InteropServices;
 
 public class DepthObjectDetectorTopDown3D : MonoBehaviour
 {
@@ -21,7 +22,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public SerializedDictionaryStringGameObject TopDownObjectsPrefabs3D;
     public GameObject DebugObjectCenterPrefab;
     public MeshRenderer depthTextureVisualDestinationMesh;
-    public MeshRenderer QRCodeVisualizerMesh;
+    public GameObject QRCodeVisualizer;
     public ObjectCreationMode currentMode = ObjectCreationMode.ReuseObjectAndUpdate;
     [Min(0)] public int MinDepth = 500;
     [Min(0)] public int MaxDepth = 1000;
@@ -69,7 +70,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     private bool DEBUG_FloodFill_Mask = false;
 
-    private WebCamTexture _WebCamTexture;
+    private BarcodeReader barCodeReader;
 
     void Awake()
     {
@@ -90,9 +91,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         _BinaryMaskTexture = new Texture2D(_DepthWidth, _DepthHeight);
         _MainCamera = Camera.main;
 
-        _WebCamTexture = new WebCamTexture();
-        _WebCamTexture.Play();
-
         if (TopDownObjectsPrefabs3D == null)
             TopDownObjectsPrefabs3D = GetComponent<SerializedDictionaryStringGameObject>();
 
@@ -102,6 +100,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         _Stats = new Mat();
         _Centroids = new Mat();
         objectBounds = new List<Rect>();
+        barCodeReader = new BarcodeReader { AutoRotate = true };
 
         previousMode = currentMode;
         StartCoroutine(ExecuteEveryNFrames());
@@ -162,7 +161,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         for (int i = 1; i < numComponents; i++)  // Ignore background
         {
             int area = _Stats.At<int>(i, 4);
-            if (minBlobSize <= area && area <= maxBlobSize)
+            if (area >= minBlobSize && area <= maxBlobSize)
             {
                 int x = _Stats.At<int>(i, 0);
                 int y = _Stats.At<int>(i, 1);
@@ -290,7 +289,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         foreach (var contour in contours)
         {
             double area = Cv2.ContourArea(contour);
-            if (minBlobSize <= area && area <= maxBlobSize)
+            if (area <= minBlobSize || area >= maxBlobSize)
                 continue;
 
             // Convert to simplified 2D world contour
@@ -373,11 +372,11 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             {
                 obj = InstantiateGameObjectFromCameraContour(contour, center3D);
 
-                if(obj == null)
-                    return;
-
-                trackedObjects[obj] = newCenter2D;
-                _SpawnedObjects.Add(obj);
+                if (obj != null) 
+                {
+                    trackedObjects[obj] = newCenter2D;
+                    _SpawnedObjects.Add(obj);
+                }
             }
 
             if (obj != null)
@@ -417,23 +416,23 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                     Debug.LogWarning("Failed to create mesh for object with contour.");
                 }
             }
+        }
 
-            // Remove objects not updated
-            List<GameObject> toRemove = new List<GameObject>();
-            foreach (var o in trackedObjects.Keys)
+        // Remove objects not updated
+        List<GameObject> toRemove = new List<GameObject>();
+        foreach (var o in trackedObjects.Keys)
+        {
+            if (!updatedObjects.Contains(o))
             {
-                if (!updatedObjects.Contains(o))
-                {
-                    toRemove.Add(o);
-                }
+                toRemove.Add(o);
             }
+        }
 
-            foreach (var o in toRemove)
-            {
-                trackedObjects.Remove(o);
-                _SpawnedObjects.Remove(o);
-                Destroy(o);
-            }
+        foreach (var o in toRemove)
+        {
+            trackedObjects.Remove(o);
+            _SpawnedObjects.Remove(o);
+            Destroy(o);
         }
     }
 
@@ -453,7 +452,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     private GameObject InstantiateGameObjectFromCameraContour(Point[] contour, Vector3 center3D)
     {
         OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
-
         Texture2D cameraTex = ColorSourceManager.Instance.GetColorTexture();
 
         if (cameraTex == null)
@@ -461,17 +459,15 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             Debug.LogWarning("Failed to read camera texture! No ColorSourceManager in Scene?");
             return null;
         }
+        Rect unityBoundingRect = new Rect(boundingRect.X, boundingRect.Y, boundingRect.Width, boundingRect.Height);
 
-        Mat colorMat = Texture2DToMat(cameraTex);
-
-        Texture2D camSegment = GetColorSegmentFromDepthContour(
-            _DepthManager.GetData(), boundingRect, _CoordinateMapper, colorMat,
-            _DepthWidth, _DepthHeight, ColorSourceManager.Instance.GetColorTexture().width, ColorSourceManager.Instance.GetColorTexture().height
-        );
+        Texture2D camSegment = GetColorSegmentGPU(cameraTex, unityBoundingRect);
 
         if (camSegment != null)
         {
-            QRCodeVisualizerMesh.material.mainTexture = camSegment;
+
+            if (QRCodeVisualizer.TryGetComponent<Image>(out Image img))
+                img.material.mainTexture = (Texture)camSegment;
 
             // Instantiate object at calculated 3D center
             return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
@@ -483,7 +479,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     private GameObject GetGameObjectPrefabFromCameraContour(Point[] contour, Vector3 center3D)
     {
         OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
-
         Texture2D cameraTex = ColorSourceManager.Instance.GetColorTexture();
 
         if (cameraTex == null)
@@ -492,16 +487,14 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             return null;
         }
 
-        Mat colorMat = Texture2DToMat(cameraTex);
+        Rect unityBoundingRect = new Rect(boundingRect.X, boundingRect.Y, boundingRect.Width, boundingRect.Height);
 
-        Texture2D camSegment = GetColorSegmentFromDepthContour(
-            _DepthManager.GetData(), boundingRect, _CoordinateMapper, colorMat,
-            _DepthWidth, _DepthHeight, ColorSourceManager.Instance.GetColorTexture().width, ColorSourceManager.Instance.GetColorTexture().height
-        );
+        Texture2D camSegment = GetColorSegmentGPU(cameraTex, unityBoundingRect);
 
         if (camSegment != null)
         {
-            QRCodeVisualizerMesh.material.mainTexture = camSegment;
+            if (QRCodeVisualizer.TryGetComponent<Image>(out Image img))
+                img.material.mainTexture = (Texture)camSegment;
 
             // Instantiate object at calculated 3D center
             return GetPrefabFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
@@ -549,76 +542,45 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         int width = texture.width;
         int height = texture.height;
 
-        Mat mat = new Mat(height, width, MatType.CV_8UC4); // RGBA
+        // Allocate Mat with 4 channels (RGBA)
+        Mat mat = new Mat(height, width, MatType.CV_8UC4);
+        byte[] rawBytes = new byte[pixels.Length * 4];
+
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            Color32 c = pixels[i];
+            int offset = i * 4;
+            rawBytes[offset + 0] = c.b; // OpenCV uses BGRA
+            rawBytes[offset + 1] = c.g;
+            rawBytes[offset + 2] = c.r;
+            rawBytes[offset + 3] = c.a;
+        }
 
         unsafe
         {
-            byte* dstPtr = (byte*)mat.DataPointer;
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                Color32 color = pixels[i];
-                dstPtr[i * 4 + 0] = color.b;
-                dstPtr[i * 4 + 1] = color.g;
-                dstPtr[i * 4 + 2] = color.r;
-                dstPtr[i * 4 + 3] = color.a;
-            }
+            Marshal.Copy(rawBytes, 0, mat.Data, rawBytes.Length);
         }
 
         return mat;
     }
 
-    public Texture2D GetColorSegmentFromDepthContour(ushort[] depthData, OpenCvSharp.Rect depthRect, CoordinateMapper coordinateMapper, Mat colorMat, 
-                                                     int depthWidth, int depthHeight, int colorWidth,int colorHeight)
+    public Texture2D GetColorSegmentGPU(Texture2D source, Rect cropRect)
     {
-        if (depthData == null || depthData.Length != depthWidth * depthHeight)
-            throw new ArgumentException("Invalid depth data dimensions.");
+        RenderTexture prev = RenderTexture.active;
 
-        var colorSpacePoints = new ColorSpacePoint[depthData.Length];
-        coordinateMapper.MapDepthFrameToColorSpace(depthData, colorSpacePoints);
+        RenderTexture rt = new RenderTexture(source.width, source.height, 0);
+        Graphics.Blit(source, rt); // draw source texture into RT
 
-        var colorPointsList = new List<Point>();
+        RenderTexture.active = rt;
 
-        for (int y = depthRect.Top; y < depthRect.Bottom; y++)
-        {
-            for (int x = depthRect.Left; x < depthRect.Right; x++)
-            {
-                if (x < 0 || x >= depthWidth || y < 0 || y >= depthHeight)
-                    continue;
+        Texture2D cropped = new Texture2D((int)cropRect.width, (int)cropRect.height, TextureFormat.RGBA32, false);
+        cropped.ReadPixels(cropRect, 0, 0);
+        cropped.Apply();
 
-                int index = y * depthWidth + x;
-                var csp = colorSpacePoints[index];
+        RenderTexture.active = prev;
+        rt.Release();
 
-                if (float.IsNaN(csp.X) || float.IsNaN(csp.Y))
-                    continue;
-
-                int colorX = (int)Math.Round(csp.X);
-                int colorY = (int)Math.Round(csp.Y);
-
-                if (colorX >= 0 && colorX < colorWidth && colorY >= 0 && colorY < colorHeight)
-                    colorPointsList.Add(new Point(colorX, colorY));
-            }
-        }
-
-        if (colorPointsList.Count == 0)
-            return null;
-
-        OpenCvSharp.Rect colorBoundingRect = Cv2.BoundingRect(colorPointsList);
-
-        // Clamp to color image bounds
-        colorBoundingRect = new OpenCvSharp.Rect(
-            Math.Clamp(colorBoundingRect.X, 0, colorWidth - 1),
-            Math.Clamp(colorBoundingRect.Y, 0, colorHeight - 1),
-            Math.Min(colorBoundingRect.Width, colorWidth - colorBoundingRect.X),
-            Math.Min(colorBoundingRect.Height, colorHeight - colorBoundingRect.Y)
-        );
-
-        // Crop the Mat
-        Mat croppedMat = new Mat(colorMat, colorBoundingRect);
-
-        croppedMat = Sharpen(croppedMat);
-
-        // Convert to Texture2D
-        return MatToTexture2D(croppedMat);
+        return cropped;
     }
 
     private Texture2D MatToTexture2D(Mat mat)
@@ -665,7 +627,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         foreach (var contour in contours)
         {
             double area = Cv2.ContourArea(contour);
-            if (minBlobSize <= area && area <= maxBlobSize)
+            if (area >= minBlobSize && area <= maxBlobSize)
             {
                 // Convert 2D contour positions to Vector2 for simplification
                 List<Vector2> contour2D = new List<Vector2>();
@@ -717,71 +679,50 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 objectBounds.Add(new Rect(minBounds.x, minBounds.z, size3D.x, size3D.z)); // Assuming x-z plane is top-down
                                                                                           //----------
 
-                OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
+                // Instantiate object at calculated 3D center
+                GameObject obj = InstantiateGameObjectFromCameraContour(contour, center3D);
 
-                Texture2D cameraTex = ColorSourceManager.Instance.GetColorTexture();
-
-                if (cameraTex == null)
-                {
-                    Debug.LogWarning("Failed to read camera texture! No ColorSourceManager in Scene?");
+                if (obj == null)
                     return;
-                }
 
-                Mat colorMat = Texture2DToMat(cameraTex);
+                GameObject childPlaneObj = obj.transform.GetChild(0).gameObject;
 
-                Texture2D camSegment = GetColorSegmentFromDepthContour(
-                    _DepthManager.GetData(), boundingRect, _CoordinateMapper, colorMat,
-                    _DepthWidth, _DepthHeight, ColorSourceManager.Instance.GetColorTexture().width, ColorSourceManager.Instance.GetColorTexture().height
-                );
+                _SpawnedObjects.Add(obj);
 
-                if (camSegment != null)
+                Vector3 localCenter = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(center3D);
+
+                if (visualizeWithLines)
+                    VisualizeWorldPoints3D(obj, worldPoints3D);
+
+                Mesh planeMesh = TriangulateFull(worldPoints3D, localCenter, collisionWallHeight);
+                Mesh wallMesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
+
+                if (wallMesh != null)
                 {
-                    QRCodeVisualizerMesh.material.mainTexture = camSegment;
+                    if (!childPlaneObj.TryGetComponent<MeshFilter>(out var meshFilter))
+                        meshFilter = childPlaneObj.AddComponent<MeshFilter>();
+                    meshFilter.mesh = planeMesh;
 
-                    // Instantiate object at calculated 3D center
-                    GameObject obj = InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+                    if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
+                        childMeshCollider = obj.AddComponent<MeshCollider>();
+                    childMeshCollider.sharedMesh = planeMesh;
 
-                    if (obj == null)
-                        return;
+                    //------------
 
-                    GameObject childPlaneObj = obj.transform.GetChild(0).gameObject;
+                    if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
+                        meshRenderer = obj.AddComponent<MeshRenderer>();
+                    meshRenderer.material = TopDownObjectPrefab3D.GetComponent<MeshRenderer>().sharedMaterial;
 
-                    _SpawnedObjects.Add(obj);
-
-                    Vector3 localCenter = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(center3D);
-
-                    if (visualizeWithLines)
-                        VisualizeWorldPoints3D(obj, worldPoints3D);
-
-                    Mesh planeMesh = TriangulateFull(worldPoints3D, localCenter, collisionWallHeight);
-                    Mesh wallMesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
-
-                    if (wallMesh != null)
-                    {
-                        if (!childPlaneObj.TryGetComponent<MeshFilter>(out var meshFilter))
-                            meshFilter = childPlaneObj.AddComponent<MeshFilter>();
-                        meshFilter.mesh = planeMesh;
-
-                        if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
-                            childMeshCollider = obj.AddComponent<MeshCollider>();
-                        childMeshCollider.sharedMesh = planeMesh;
-
-                        //------------
-
-                        if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
-                            meshRenderer = obj.AddComponent<MeshRenderer>();
-                        meshRenderer.material = TopDownObjectPrefab3D.GetComponent<MeshRenderer>().sharedMaterial;
-
-                        // Optional: Enable mesh collider
-                        if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
-                            meshCollider = obj.AddComponent<MeshCollider>();
-                        meshCollider.sharedMesh = wallMesh;
-                    }
-                    else
-                    {
-                        Debug.LogWarning("Failed to create mesh for object with contour.");
-                    }
+                    // Optional: Enable mesh collider
+                    if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
+                        meshCollider = obj.AddComponent<MeshCollider>();
+                    meshCollider.sharedMesh = wallMesh;
                 }
+                else
+                {
+                    Debug.LogWarning("Failed to create mesh for object with contour.");
+                }
+                
             }
         }
     }
@@ -827,29 +768,19 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     private string ReadQRCodeFromImage(Texture2D tex, int width, int height)
     {
-        // create a barcode reader instance
-        var reader = new BarcodeReader
-        {
-            AutoRotate = true
-        };
-
         try
         {
             // detect and decode the barcode inside the bitmap
-            var result = reader.Decode(tex.GetPixels32(), width, height);
+            Result result = barCodeReader.Decode(tex.GetPixels32(), width, height);
 
-            // do something with the result
             if (result != null)
             {
-                Console.WriteLine(result.BarcodeFormat.ToString());
-                Console.WriteLine(result.Text);
+                //Debug.Log(result.BarcodeFormat.ToString());
+                Debug.Log(result.Text);
                 return result.Text;
             }
             else
-            {
-                Console.WriteLine("No barcode found");
                 return "";
-            }
         } 
         catch (Exception e)
         {
@@ -980,28 +911,25 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     private static List<Vector2> RamerDouglasPeucker(Vector2[] points, float epsilon)
     {
-
         try
         {
             if (points.Length < 3) return new List<Vector2>(points);
-
-            List<Vector2> result = new List<Vector2>();
 
             int firstIndex = 0;
             int lastIndex = points.Length - 1;
             List<int> pointIndexesToKeep = new List<int> { firstIndex, lastIndex };
 
-            while (lastIndex >= firstIndex && points[firstIndex] == points[lastIndex]) 
-                lastIndex--; // Avoid duplicates
+            while (points[firstIndex] == points[lastIndex]) lastIndex--; // Avoid duplicates
 
             Reduce(points, firstIndex, lastIndex, epsilon, pointIndexesToKeep);
             pointIndexesToKeep.Sort();
 
-            
+            List<Vector2> result = new List<Vector2>();
             foreach (int index in pointIndexesToKeep)
             {
                 result.Add(points[index]);
             }
+            return result;
         }
         catch (Exception e)
         {
@@ -1013,6 +941,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     private static void Reduce(Vector2[] points, int firstIndex, int lastIndex, float epsilon, List<int> pointIndexesToKeep)
     {
+
         float maxDistance = 0;
         int index = firstIndex;
 

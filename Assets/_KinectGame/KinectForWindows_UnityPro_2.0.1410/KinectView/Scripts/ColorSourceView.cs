@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using Windows.Kinect;
+using UnityEngine.UI;
 
 public class ColorSourceView : MonoBehaviour
 {
@@ -9,7 +10,8 @@ public class ColorSourceView : MonoBehaviour
     
     void Start ()
     {
-        gameObject.GetComponent<Renderer>().material.SetTextureScale("_MainTex", new Vector2(-1, 1));
+        if (gameObject.TryGetComponent<Renderer>(out Renderer rend))
+            rend.material.SetTextureScale("_MainTex", new Vector2(-1, 1));
     }
     
     void Update()
@@ -25,6 +27,10 @@ public class ColorSourceView : MonoBehaviour
             return;
         }
         
-        gameObject.GetComponent<Renderer>().material.mainTexture = _ColorManager.GetColorTexture();
+        if (gameObject.TryGetComponent<Renderer>(out Renderer rend))
+            rend.material.mainTexture = _ColorManager.GetColorTexture();
+
+        if (gameObject.TryGetComponent<Image>(out Image img))
+            img.material.mainTexture = (Texture)_ColorManager.GetColorTexture();
     }
 }
