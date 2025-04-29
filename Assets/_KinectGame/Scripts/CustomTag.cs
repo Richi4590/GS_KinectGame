@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class CustomTag : MonoBehaviour
 {
-    public string Tag = "";
+    public List<string> Tags = new List<string>(1) {""};
 }

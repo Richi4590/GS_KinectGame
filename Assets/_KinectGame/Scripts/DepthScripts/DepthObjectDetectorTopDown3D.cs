@@ -451,7 +451,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     private GameObject InstantiateGameObjectFromCameraContour(Point[] contour, Vector3 center3D)
     {
-        OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
         Texture2D cameraTex = ColorSourceManager.Instance.GetColorTexture();
 
         if (cameraTex == null)
@@ -459,15 +458,31 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             Debug.LogWarning("Failed to read camera texture! No ColorSourceManager in Scene?");
             return null;
         }
-        Rect unityBoundingRect = new Rect(boundingRect.X, boundingRect.Y, boundingRect.Width, boundingRect.Height);
+        OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
 
-        Texture2D camSegment = GetColorSegmentGPU(cameraTex, unityBoundingRect);
+        Rect colorRect;
+
+        /*
+        colorRect = MapDepthRectToColorSpace(boundingRect,
+                                          _CoordinateMapper,
+                                          _DepthManager.GetData(), _DepthWidth);
+        */
+
+        colorRect = MapCenteredDepthRectToColorSpace(boundingRect, _CoordinateMapper,
+            _DepthManager.GetData(), _DepthWidth, _DepthHeight, 50);
+
+
+        if (float.IsInfinity(colorRect.x) || float.IsInfinity(colorRect.y)
+        || float.IsInfinity(colorRect.width) || float.IsInfinity(colorRect.height))
+            return null;
+
+        Texture2D camSegment = GetColorSegmentGPU(cameraTex, colorRect);
 
         if (camSegment != null)
         {
 
             if (QRCodeVisualizer.TryGetComponent<Image>(out Image img))
-                img.material.mainTexture = (Texture)camSegment;
+                img.material.SetTexture("_MainTex", (Texture)camSegment);
 
             // Instantiate object at calculated 3D center
             return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
@@ -478,7 +493,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     private GameObject GetGameObjectPrefabFromCameraContour(Point[] contour, Vector3 center3D)
     {
-        OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
         Texture2D cameraTex = ColorSourceManager.Instance.GetColorTexture();
 
         if (cameraTex == null)
@@ -487,20 +501,88 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             return null;
         }
 
-        Rect unityBoundingRect = new Rect(boundingRect.X, boundingRect.Y, boundingRect.Width, boundingRect.Height);
+        OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
 
-        Texture2D camSegment = GetColorSegmentGPU(cameraTex, unityBoundingRect);
+        Rect colorRect; 
+        
+        /*
+        colorRect = MapDepthRectToColorSpace(boundingRect,
+                                          _CoordinateMapper,
+                                          _DepthManager.GetData(), _DepthWidth);
+        */
 
+        colorRect = MapCenteredDepthRectToColorSpace(boundingRect, _CoordinateMapper,
+            _DepthManager.GetData(), _DepthWidth, _DepthHeight, 50);
+
+
+        if (float.IsInfinity(colorRect.x) || float.IsInfinity(colorRect.y)
+        || float.IsInfinity(colorRect.width) || float.IsInfinity(colorRect.height))
+            return null;
+
+        Texture2D camSegment = GetColorSegmentGPU(cameraTex, colorRect);
+         
         if (camSegment != null)
         {
             if (QRCodeVisualizer.TryGetComponent<Image>(out Image img))
-                img.material.mainTexture = (Texture)camSegment;
+                img.material.SetTexture("_MainTex", (Texture)camSegment);
 
             // Instantiate object at calculated 3D center
             return GetPrefabFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
         }
 
         return null;
+    }
+
+    public Rect MapCenteredDepthRectToColorSpace(OpenCvSharp.Rect boundingRect,
+                                                        CoordinateMapper coordMapper,
+                                                        ushort[] depthData,
+                                                        int depthWidth,
+                                                        int depthHeight,
+                                                        int fixedSize = 50)
+    {
+        // Get center of the bounding rect
+        int centerX = boundingRect.X + boundingRect.Width / 2;
+        int centerY = boundingRect.Y + boundingRect.Height / 2;
+
+        // Clamp to depth image bounds
+        centerX = Mathf.Clamp(centerX, 0, depthWidth - 1);
+        centerY = Mathf.Clamp(centerY, 0, depthHeight - 1);
+
+        int depthIndex = centerY * depthWidth + centerX;
+        ushort depthVal = depthData[depthIndex];
+
+        // Map center depth point to color space
+        DepthSpacePoint depthCenter = new DepthSpacePoint { X = centerX, Y = centerY };
+        ColorSpacePoint colorCenter = coordMapper.MapDepthPointToColorSpace(depthCenter, depthVal);
+
+        // Build fixed-size rect around the color-mapped center
+        float halfSize = fixedSize / 2f;
+        float colorX = colorCenter.X - halfSize;
+        float colorY = colorCenter.Y - halfSize;
+
+        return new Rect(colorX, colorY, fixedSize, fixedSize);
+    }
+
+    public Rect MapDepthRectToColorSpace(OpenCvSharp.Rect depthRect, CoordinateMapper coordMapper, ushort[] depthData, int depthWidth)
+    {
+        Vector2 topLeftColor = MapDepthPointToColor(depthRect.X, depthRect.Y);
+        Vector2 bottomRightColor = MapDepthPointToColor(depthRect.X + depthRect.Width, depthRect.Y + depthRect.Height);
+
+        return Rect.MinMaxRect(topLeftColor.x, topLeftColor.y, bottomRightColor.x, bottomRightColor.y);
+
+        Vector2 MapDepthPointToColor(float x, float y)
+        {
+            int px = Mathf.Clamp(Mathf.RoundToInt(x), 0, depthWidth - 1);
+            int py = Mathf.Clamp(Mathf.RoundToInt(y), 0, depthData.Length / depthWidth - 1);
+            int depthIndex = py * depthWidth + px;
+
+            ushort depthVal = depthData[depthIndex];
+
+            DepthSpacePoint depthPoint = new DepthSpacePoint { X = px, Y = py };
+            ColorSpacePoint colorPoint = coordMapper.MapDepthPointToColorSpace(depthPoint, depthVal);
+
+            return new Vector2(colorPoint.X, colorPoint.Y);
+        }
     }
 
     private void OnDrawGizmos()

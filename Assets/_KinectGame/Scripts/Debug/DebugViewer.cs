@@ -7,6 +7,7 @@ public class DebugViewer : MonoBehaviour
     public bool objectsInitiallyActive = false;
     // Start is called before the first frame update
     public List<GameObject> gameObjects;
+    public List<Renderer> gameObjectRenderers;
 
     void Start()
     {
@@ -25,6 +26,7 @@ public class DebugViewer : MonoBehaviour
             if (gameObjects.Count > 0)
             {
                 gameObjects.ForEach(o => o.SetActive(true));
+                gameObjectRenderers.ForEach(r => r.enabled = true);
             }
         }
         else if (Input.GetKeyUp(KeyCode.Tab))
@@ -32,6 +34,7 @@ public class DebugViewer : MonoBehaviour
             if (gameObjects.Count > 0)
             {
                 gameObjects.ForEach(o => o.SetActive(false));
+                gameObjectRenderers.ForEach(r => r.enabled = false);
             }
         }
     }
