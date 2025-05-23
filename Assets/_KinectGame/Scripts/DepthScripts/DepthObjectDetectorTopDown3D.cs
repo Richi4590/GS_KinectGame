@@ -17,11 +17,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 {
     public static DepthObjectDetectorTopDown3D Instance;
 
+    public Camera _Camera;
     public GameObject DepthSourceManager;
     public GameObject TopDownObjectPrefab3D;
     public SerializedDictionaryStringGameObject TopDownObjectsPrefabs3D;
     public GameObject DebugObjectCenterPrefab;
     public MeshRenderer depthTextureVisualDestinationMesh;
+    public Transform depthChildrenRootObject;
     public GameObject QRCodeVisualizer;
     public ObjectCreationMode currentMode = ObjectCreationMode.ReuseObjectAndUpdate;
     [Min(0)] public int MinDepth = 500;
@@ -68,9 +70,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     private Mat _Centroids;
     private Vector3[] worldPoints3D;
 
+    double scaleX;
+    double scaleY;
     private bool DEBUG_FloodFill_Mask = false;
-
-    private BarcodeReader barCodeReader;
 
     void Awake()
     {
@@ -89,7 +91,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         _DepthManager = DepthSourceManager.GetComponent<DepthSourceManager>();
         _BinaryMaskTexture = new Texture2D(_DepthWidth, _DepthHeight);
-        _MainCamera = Camera.main;
+        _MainCamera = _Camera;
 
         if (TopDownObjectsPrefabs3D == null)
             TopDownObjectsPrefabs3D = GetComponent<SerializedDictionaryStringGameObject>();
@@ -100,9 +102,11 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         _Stats = new Mat();
         _Centroids = new Mat();
         objectBounds = new List<Rect>();
-        barCodeReader = new BarcodeReader { AutoRotate = true };
 
         previousMode = currentMode;
+
+        scaleX = Screen.currentResolution.width / _BinaryImage.Width;
+        scaleY = Screen.currentResolution.height /_BinaryImage.Height;
         StartCoroutine(ExecuteEveryNFrames());
         
     }
@@ -294,12 +298,22 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
             // Convert to simplified 2D world contour
             List<Vector2> contour2D = new List<Vector2>();
+
             for (int i = 0; i < contour.Length; i++)
             {
-                Vector3 pos = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
+                int TargetWidth = Screen.width;  // e.g., beamer canvas width
+                int TargetHeight = Screen.height;  // e.g., beamer canvas height
+
+                float scale = Mathf.Min(TargetWidth / _DepthWidth, TargetHeight / _DepthHeight);
+                float offsetX = (TargetWidth - _DepthWidth * scale) * 0.5f;
+                float offsetY = (TargetHeight - _DepthHeight * scale) * 0.5f;
+
+                float scaledX = contour[i].X * scale + offsetX;
+                float scaledY = contour[i].Y * scale + offsetY;
+
+                Vector3 pos = DepthToViewport(new Vector2(scaledX, scaledY));
                 contour2D.Add(new Vector2(pos.x, pos.z));
             }
-
             Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
 
             if (simplified.Length < 3)
@@ -310,7 +324,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
             for (int i = 0; i < simplified.Length; i++)
             {
-                worldPoints3D[i] = new Vector3(simplified[i].x, depthTextureVisualDestinationMesh.transform.position.y, simplified[i].y);
+                worldPoints3D[i] = new Vector3(
+                    simplified[i].x,
+                    depthChildrenRootObject.transform.position.y,
+                    simplified[i].y
+                );
+
+                //worldPoints3D[i] = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
             }
 
             // Compute center
@@ -346,7 +366,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             {
                 GameObject newlyScannedPrefab = GetGameObjectPrefabFromCameraContour(contour, center3D);
 
-                if (closestObject.GetComponent<CustomTag>().tag != newlyScannedPrefab.GetComponent<CustomTag>().tag) //replace old object with the actual correct one
+                closestObject.TryGetComponent<CustomTag>(out CustomTag t1);
+                newlyScannedPrefab.TryGetComponent<CustomTag>(out CustomTag t2);
+
+                if ((t1 != null && t2 != null) && (t1.tag != t2.tag)) //replace old object with the actual correct one
                 {
                     trackedObjects.Remove(closestObject);
                     _SpawnedObjects.Remove(closestObject);
@@ -356,7 +379,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                        newlyScannedPrefab,
                        center3D,
                        Quaternion.identity,
-                       depthTextureVisualDestinationMesh.transform
+                       depthChildrenRootObject
                     );
                 }
 
@@ -485,7 +508,14 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 img.material.SetTexture("_MainTex", (Texture)camSegment);
 
             // Instantiate object at calculated 3D center
-            return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+            //return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+
+            return Instantiate(
+                TopDownObjectsPrefabs3D.dict[""],
+                center3D,
+                Quaternion.identity,
+                depthChildrenRootObject
+                );
         }
 
         return null;
@@ -527,7 +557,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 img.material.SetTexture("_MainTex", (Texture)camSegment);
 
             // Instantiate object at calculated 3D center
-            return GetPrefabFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+            //return GetPrefabFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+
+            return TopDownObjectsPrefabs3D.dict[""];
         }
 
         return null;
@@ -706,7 +738,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         objectBounds.Clear();
 
-        foreach (var contour in contours)
+        foreach (Point[] contour in contours)
         {
             double area = Cv2.ContourArea(contour);
             if (area >= minBlobSize && area <= maxBlobSize)
@@ -716,7 +748,17 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
                 for (int i = 0; i < contour.Length; i++)
                 {
-                    Vector3 pos = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
+                    int TargetWidth = Screen.width;  // e.g., beamer canvas width
+                    int TargetHeight = Screen.height;  // e.g., beamer canvas height
+
+                    float scale = Mathf.Min(TargetWidth / _DepthWidth, TargetHeight / _DepthHeight);
+                    float offsetX = (TargetWidth - _DepthWidth * scale) * 0.5f;
+                    float offsetY = (TargetHeight - _DepthHeight * scale) * 0.5f;
+
+                    float scaledX = contour[i].X * scale + offsetX;
+                    float scaledY = contour[i].Y * scale + offsetY;
+
+                    Vector3 pos = DepthToViewport(new Vector2(scaledX, scaledY));
                     contour2D.Add(new Vector2(pos.x, pos.z));
                 }
 
@@ -730,10 +772,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
                 for (int i = 0; i < simplified.Length; i++)
                 {
+                    worldPoints3D[i] = new Vector3(
+                        simplified[i].x,
+                        depthChildrenRootObject.transform.position.y,
+                        simplified[i].y
+                    );
+
                     //worldPoints3D[i] = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
-                    worldPoints3D[i].x = simplified[i].x;
-                    worldPoints3D[i].z = simplified[i].y;
-                    worldPoints3D[i].y = depthTextureVisualDestinationMesh.transform.position.y;
                 }
 
                 /*
@@ -809,6 +854,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
     }
 
+    /*
     private GameObject InstantiateFromQRCode(Texture2D colorTex, Vector3 center3D, Quaternion identity, Transform transform)
     {
         GameObject prefabRef = null;
@@ -827,9 +873,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             prefabRef,
             center3D,
             Quaternion.identity,
-            depthTextureVisualDestinationMesh.transform
+            depthChildrenRootObject
         );
     }
+
 
     private GameObject GetPrefabFromQRCode(Texture2D colorTex, Vector3 center3D, Quaternion identity, Transform transform)
     {
@@ -847,28 +894,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         return prefabRef;
     }
-
-    private string ReadQRCodeFromImage(Texture2D tex, int width, int height)
-    {
-        try
-        {
-            // detect and decode the barcode inside the bitmap
-            Result result = barCodeReader.Decode(tex.GetPixels32(), width, height);
-
-            if (result != null)
-            {
-                //Debug.Log(result.BarcodeFormat.ToString());
-                Debug.Log(result.Text);
-                return result.Text;
-            }
-            else
-                return "";
-        } 
-        catch (Exception e)
-        {
-            return "";
-        }
-    }
+    */
 
     public Mesh TriangulateFull(Vector3[] points, Vector3 center, float height)
     {
