@@ -8,8 +8,9 @@ namespace BezierSolution
 	public class BezierWalkerWithSpeed : BezierWalker
 	{
 		public bool shouldWalk = true;
+        public float moveAmount = 0.1f;
 
-		public BezierSpline spline;
+        public BezierSpline spline;
 		public TravelMode travelMode;
 
 		public float speed = 5f;
@@ -56,6 +57,29 @@ namespace BezierSolution
             speed = 0f;
         }
 
+		public void ToggleMove()
+		{
+			if (shouldWalk)
+				StopMoving();
+			else
+				StartMoving();
+		}
+
+        public void MoveForwards()
+        {
+            shouldWalk = false;
+			m_normalizedT -= moveAmount * Time.deltaTime;
+
+            Execute(Time.deltaTime);
+        }
+
+        public void MoveBackwards()
+        {
+            shouldWalk = false;
+            m_normalizedT += moveAmount * Time.deltaTime;
+            Execute(Time.deltaTime);
+        }
+
         public void Reset()
         {
             shouldWalk = false;
@@ -70,7 +94,16 @@ namespace BezierSolution
 
         private void Update()
 		{
-			if (shouldWalk)
+			if (Input.GetKey(KeyCode.LeftArrow))
+				MoveForwards();
+
+			if (Input.GetKey(KeyCode.RightArrow))
+				MoveBackwards();
+
+			if (Input.GetKeyDown(KeyCode.Space))
+				ToggleMove();
+
+           if (shouldWalk)
 			{
 				Execute(Time.deltaTime);
 

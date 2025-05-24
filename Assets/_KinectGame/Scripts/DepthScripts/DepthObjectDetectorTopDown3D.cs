@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using OpenCvSharp;
 using System.Collections.Generic;
 using Windows.Kinect;
@@ -12,11 +12,14 @@ using System;
 using ZXing;
 using OpenCvSharp.Util;
 using System.Runtime.InteropServices;
+using System.IO;
 
 public class DepthObjectDetectorTopDown3D : MonoBehaviour
 {
     public static DepthObjectDetectorTopDown3D Instance;
-
+    public ContourApproximationModes ContourAproximationMode;
+    public bool DEBUG = false;
+    public string DEBUG_BINARY_IMAGE_PATH = "Assets/BinaryTest.png";
     public Camera _Camera;
     public GameObject DepthSourceManager;
     public GameObject TopDownObjectPrefab3D;
@@ -104,9 +107,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         objectBounds = new List<Rect>();
 
         previousMode = currentMode;
-
-        scaleX = Screen.currentResolution.width / _BinaryImage.Width;
-        scaleY = Screen.currentResolution.height /_BinaryImage.Height;
         StartCoroutine(ExecuteEveryNFrames());
         
     }
@@ -123,7 +123,82 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         {
             // Wait for N frames
             yield return new WaitForSeconds(1f / ((int)(1.0f / Time.smoothDeltaTime)) * framesToWait);
-            ProcessDepthData(_DepthManager.GetData());
+
+            if (!DEBUG)
+                ProcessDepthData(_DepthManager.GetData());
+            else
+            {
+                _BinaryMaskTexture = Resources.Load<Texture2D>(DEBUG_BINARY_IMAGE_PATH);
+                _BinaryMaskTexture = MakeReadable(_BinaryMaskTexture);
+
+                int width = _BinaryMaskTexture.width;
+                int height = _BinaryMaskTexture.height;
+
+                Color[] pixelsInitial = _BinaryMaskTexture.GetPixels();
+
+                if (flipDepthMapX)
+                {
+                    // Flip horizontally
+                    for (int y = 0; y < height; y++)
+                    {
+                        int rowStart = y * width;
+                        int rowEnd = rowStart + width - 1;
+                        for (int x = 0; x < width / 2; x++)
+                        {
+                            int left = rowStart + x;
+                            int right = rowEnd - x;
+
+                            (pixelsInitial[left], pixelsInitial[right]) = (pixelsInitial[right], pixelsInitial[left]);
+                        }
+                    }
+                }
+
+                if (flipDepthMapY)
+                {
+                    // Flip vertically
+                    for (int y = 0; y < height / 2; y++)
+                    {
+                        int topRow = y * width;
+                        int bottomRow = (height - 1 - y) * width;
+
+                        for (int x = 0; x < width; x++)
+                        {
+                            int topIndex = topRow + x;
+                            int bottomIndex = bottomRow + x;
+
+                            (pixelsInitial[topIndex], pixelsInitial[bottomIndex]) = (pixelsInitial[bottomIndex], pixelsInitial[topIndex]);
+                        }
+                    }
+                }
+
+                _BinaryMaskTexture.SetPixels(pixelsInitial);
+                _BinaryMaskTexture.Apply(false); // 'false' skips mipmap updates for speed
+
+                //---
+
+                Color32[] pixels = _BinaryMaskTexture.GetPixels32();
+
+                if (_BinaryMaskTexture != null & (_BinaryMaskTexture.width > 0 & _BinaryMaskTexture.height > 0))
+                {
+                    byte[] grayscalePixels = new byte[pixels.Length];
+
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        // Convert to grayscale by red channel or average RGB
+                        byte gray = (byte)(0.299f * pixels[i].r + 0.587f * pixels[i].g + 0.114f * pixels[i].b);
+
+                        // Optional: binarize (threshold) to black/white
+                        grayscalePixels[i] = (gray > 127) ? (byte)255 : (byte)0;
+                    }
+
+                    // Copy to Mat
+                    _BinaryImage.SetArray(0, 0, grayscalePixels);
+
+                    depthTextureVisualDestinationMesh.material.mainTexture = _BinaryMaskTexture;
+                }
+
+            }
+            
             //InstantiateObjectsFromBounds(objectBounds);
 
             if (previousMode != currentMode)
@@ -144,6 +219,26 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
     }
 
+    Texture2D MakeReadable(Texture2D source)
+    {
+        RenderTexture rt = RenderTexture.GetTemporary(
+            source.width, source.height, 0,
+            RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
+
+        Graphics.Blit(source, rt);
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = rt;
+
+        Texture2D readableTex = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
+        readableTex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        readableTex.Apply();
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(rt);
+
+        return readableTex;
+    }
     void ProcessDepthDataOld(ushort[] depthData)
     {
         if (depthData == null) return;
@@ -301,17 +396,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
             for (int i = 0; i < contour.Length; i++)
             {
-                int TargetWidth = Screen.width;  // e.g., beamer canvas width
-                int TargetHeight = Screen.height;  // e.g., beamer canvas height
-
-                float scale = Mathf.Min(TargetWidth / _DepthWidth, TargetHeight / _DepthHeight);
-                float offsetX = (TargetWidth - _DepthWidth * scale) * 0.5f;
-                float offsetY = (TargetHeight - _DepthHeight * scale) * 0.5f;
-
-                float scaledX = contour[i].X * scale + offsetX;
-                float scaledY = contour[i].Y * scale + offsetY;
-
-                Vector3 pos = DepthToViewport(new Vector2(scaledX, scaledY));
+                Vector3 pos = DepthToViewportMapped(new Vector2(contour[i].X, contour[i].Y));
                 contour2D.Add(new Vector2(pos.x, pos.z));
             }
             Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
@@ -364,7 +449,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             GameObject obj = null;
             if (closestObject != null && minDistance <= maxAllowedMovementRadius)
             {
-                GameObject newlyScannedPrefab = GetGameObjectPrefabFromCameraContour(contour, center3D);
+                GameObject newlyScannedPrefab = TopDownObjectsPrefabs3D.dict[""];//GetGameObjectPrefabFromCameraContour(contour, center3D);
 
                 closestObject.TryGetComponent<CustomTag>(out CustomTag t1);
                 newlyScannedPrefab.TryGetComponent<CustomTag>(out CustomTag t2);
@@ -381,6 +466,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                        Quaternion.identity,
                        depthChildrenRootObject
                     );
+
+                    closestObject.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
                 }
 
                 // Reuse object
@@ -459,19 +546,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
     }
 
-    public static Mat Sharpen(Mat input)
-    {
-        Mat sharpened = new Mat();
-        float[] kernelData = {
-         0, -1,  0,
-        -1,  5, -1,
-         0, -1,  0
-    };
-        var kernel = new Mat(3, 3, MatType.CV_32FC1, kernelData);
-        Cv2.Filter2D(input, sharpened, input.Depth(), kernel);
-        return sharpened;
-    }
-
     private GameObject InstantiateGameObjectFromCameraContour(Point[] contour, Vector3 center3D)
     {
         Texture2D cameraTex = ColorSourceManager.Instance.GetColorTexture();
@@ -483,13 +557,14 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
         OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
 
+        /*
         Rect colorRect;
 
-        /*
+
         colorRect = MapDepthRectToColorSpace(boundingRect,
                                           _CoordinateMapper,
                                           _DepthManager.GetData(), _DepthWidth);
-        */
+
 
         colorRect = MapCenteredDepthRectToColorSpace(boundingRect, _CoordinateMapper,
             _DepthManager.GetData(), _DepthWidth, _DepthHeight, 50);
@@ -499,26 +574,29 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         || float.IsInfinity(colorRect.width) || float.IsInfinity(colorRect.height))
             return null;
 
-        Texture2D camSegment = GetColorSegmentGPU(cameraTex, colorRect);
+
+        Texture2D camSegment = null;//GetColorSegmentGPU(cameraTex, colorRect);
 
         if (camSegment != null)
         {
-
             if (QRCodeVisualizer.TryGetComponent<Image>(out Image img))
                 img.material.SetTexture("_MainTex", (Texture)camSegment);
-
-            // Instantiate object at calculated 3D center
-            //return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
-
-            return Instantiate(
-                TopDownObjectsPrefabs3D.dict[""],
-                center3D,
-                Quaternion.identity,
-                depthChildrenRootObject
-                );
         }
+        */
 
-        return null;
+        // Instantiate object at calculated 3D center
+        //return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+
+        GameObject obj = Instantiate(
+                    TopDownObjectsPrefabs3D.dict[""],
+                    center3D,
+                    Quaternion.identity,
+                    depthChildrenRootObject
+                    );
+
+        obj.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
+
+        return obj;
     }
 
     private GameObject GetGameObjectPrefabFromCameraContour(Point[] contour, Vector3 center3D)
@@ -734,7 +812,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         HierarchyIndex[] hierarchy;
         Point[][] contours;
-        Cv2.FindContours(_BinaryImage, out contours, out hierarchy, RetrievalModes.External, ContourApproximationModes.ApproxSimple);
+        Cv2.FindContours(_BinaryImage, out contours, out hierarchy, RetrievalModes.External, ContourAproximationMode);
 
         objectBounds.Clear();
 
@@ -748,17 +826,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
                 for (int i = 0; i < contour.Length; i++)
                 {
-                    int TargetWidth = Screen.width;  // e.g., beamer canvas width
-                    int TargetHeight = Screen.height;  // e.g., beamer canvas height
-
-                    float scale = Mathf.Min(TargetWidth / _DepthWidth, TargetHeight / _DepthHeight);
-                    float offsetX = (TargetWidth - _DepthWidth * scale) * 0.5f;
-                    float offsetY = (TargetHeight - _DepthHeight * scale) * 0.5f;
-
-                    float scaledX = contour[i].X * scale + offsetX;
-                    float scaledY = contour[i].Y * scale + offsetY;
-
-                    Vector3 pos = DepthToViewport(new Vector2(scaledX, scaledY));
+                    Vector3 pos = DepthToViewportMapped(new Vector2(contour[i].X, contour[i].Y));
                     contour2D.Add(new Vector2(pos.x, pos.z));
                 }
 
@@ -1087,6 +1155,41 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         y = -y;
 
         return _MainCamera.ViewportToWorldPoint(new Vector3((x + 1) / 2, (y + 1) / 2, 0));
+    }
+
+    Vector3 DepthToViewportMapped(Vector2 depthPos)
+    {
+        depthPos.x = -depthPos.x;
+
+        float depthWidth = _DepthWidth;   // e.g., 512
+        float depthHeight = _DepthHeight; // e.g., 424
+
+        float camAspect = _MainCamera.aspect; // Unity camera (e.g. 16:9 = 1.777)
+        float depthAspect = depthWidth / depthHeight; // Kinect (e.g. 512 / 424 ≈ 1.2)
+
+        float xNorm = depthPos.x / depthWidth;
+        float yNorm = depthPos.y / depthHeight;
+
+        float viewportX, viewportY;
+
+        if (camAspect > depthAspect)
+        {
+            // 16:9 camera is wider — add pillarbox
+            float pillarbox = (1f - (depthAspect / camAspect)) / 2f;
+            float scaleX = depthAspect / camAspect;
+            viewportX = pillarbox + xNorm * scaleX;
+            viewportY = 1f - yNorm;
+        }
+        else
+        {
+            // 4:3 camera is taller — add letterbox
+            float letterbox = (1f - (camAspect / depthAspect)) / 2f;
+            float scaleY = camAspect / depthAspect;
+            viewportX = xNorm;
+            viewportY = letterbox + (1f - yNorm) * scaleY;
+        }
+
+        return _MainCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, 0));
     }
 
     private void ClearSpawnedObjects()
