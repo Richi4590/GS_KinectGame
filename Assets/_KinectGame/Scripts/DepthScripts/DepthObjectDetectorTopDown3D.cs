@@ -9,7 +9,6 @@ using UnityEngine.UI;
 using UnityEngine.Rendering;
 using AYellowpaper.SerializedCollections;
 using System;
-using ZXing;
 using OpenCvSharp.Util;
 using System.Runtime.InteropServices;
 using System.IO;
@@ -37,7 +36,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public int dilationIterations = 2;
     [Min(0)] public int erosionIterations = 2;
     [Range(0, 100)] public int borderThickness = 0;
-
+    [Min(0)] public float viewPortXOffset = 0.0f;
     public Vector3 generated2DMeshObjScale = Vector3.one;
     [Min(0)] public float simplificationTolerance = 0.02f;
 
@@ -1193,7 +1192,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             float scaleX = depthAspect / camAspect;
             viewportX = pillarbox + xNorm * scaleX;
             viewportY = 1f - yNorm;
-            viewportX = viewportX + 0.47f; //- pillarbox to offset it back to center
+            viewportX = viewportX + viewPortXOffset; //- pillarbox to offset it back to center
         }
         else
         {
