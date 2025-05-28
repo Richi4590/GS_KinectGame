@@ -18,7 +18,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 {
     public static DepthObjectDetectorTopDown3D Instance;
     public ContourApproximationModes ContourAproximationMode;
-    public bool DEBUG = false;
+    public bool DEBUG_DEPTH_TEX = false;
+    public bool DEBUG_CREATE_VISUAL_TEX = false;
     public string DEBUG_BINARY_IMAGE_PATH = "Assets/BinaryTest.png";
     public Camera _Camera;
     public GameObject DepthSourceManager;
@@ -66,13 +67,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     private ObjectCreationMode previousMode;
     private CoordinateMapper _CoordinateMapper;
 
-    private Camera _MainCamera;
+    private Camera _OrthographicCamera;
     private Mat _BinaryImage;
     private Mat _Labels;
     private Mat _Stats;
     private Mat _Centroids;
     private Vector3[] worldPoints3D;
-
+    private Mat depthMat;
     double scaleX;
     double scaleY;
     private bool DEBUG_FloodFill_Mask = false;
@@ -94,7 +95,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         _DepthManager = DepthSourceManager.GetComponent<DepthSourceManager>();
         _BinaryMaskTexture = new Texture2D(_DepthWidth, _DepthHeight);
-        _MainCamera = _Camera;
+        _OrthographicCamera = _Camera;
 
         if (TopDownObjectsPrefabs3D == null)
             TopDownObjectsPrefabs3D = GetComponent<SerializedDictionaryStringGameObject>();
@@ -105,7 +106,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         _Stats = new Mat();
         _Centroids = new Mat();
         objectBounds = new List<Rect>();
-
+        depthMat = new Mat(_DepthHeight, _DepthWidth, MatType.CV_16UC1);
         previousMode = currentMode;
         StartCoroutine(ExecuteEveryNFrames());
         
@@ -124,8 +125,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             // Wait for N frames
             yield return new WaitForSeconds(1f / ((int)(1.0f / Time.smoothDeltaTime)) * framesToWait);
 
-            if (!DEBUG)
+            if (!DEBUG_DEPTH_TEX)
+            {
                 ProcessDepthData(_DepthManager.GetData());
+            }
             else
             {
                 _BinaryMaskTexture = Resources.Load<Texture2D>(DEBUG_BINARY_IMAGE_PATH);
@@ -201,11 +204,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             
             //InstantiateObjectsFromBounds(objectBounds);
 
+
             if (previousMode != currentMode)
             {
                 ClearSpawnedObjects();
                 previousMode = currentMode;
             }
+
 
             if (currentMode == ObjectCreationMode.InstantiateObjectAndDestroyPerFrame)
             {
@@ -215,6 +220,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             {
                 InstantiateOrUpdateObjectsWithMesh();
             }
+            
 
         }
     }
@@ -277,7 +283,19 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     {
         if (depthData == null) return;
         // Convert depth data to OpenCV Mat
-        Mat depthMat = new Mat(_DepthHeight, _DepthWidth, MatType.CV_16UC1, depthData);
+        GCHandle handle = GCHandle.Alloc(depthData, GCHandleType.Pinned);
+        try
+        {
+            IntPtr ptr = handle.AddrOfPinnedObject();
+            depthMat.SetArray(0, 0, depthData); // Option 1 (slightly higher-level)
+                                                // OR:
+                                                // Marshal.Copy(depthData, 0, depthMat.Data, depthData.Length); // Option 2 (low-level fallback)
+        }
+        finally
+        {
+            handle.Free();
+        }
+
 
         if (flipDepthMapX)
             Cv2.Flip(depthMat, depthMat, FlipMode.X);
@@ -312,25 +330,21 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         byte colorValue = 255; // White border color
 
-        // Set top and bottom borders (horizontal)
-        for (int i = 0; i < modifiedMask.Cols; i++)
-        {
-            for (int j = 0; j < borderThickness; j++)
-            {
-                modifiedMask.Set<byte>(j, i, colorValue); // Top border
-                modifiedMask.Set<byte>(modifiedMask.Rows - 1 - j, i, colorValue); // Bottom border
-            }
-        }
+        // Top border
+        modifiedMask[new OpenCvSharp.Rect(0, 0, modifiedMask.Cols, borderThickness)]
+            .SetTo(new Scalar(colorValue));
 
-        // Set left and right borders (vertical)
-        for (int i = 0; i < modifiedMask.Rows; i++)
-        {
-            for (int j = 0; j < borderThickness; j++)
-            {
-                modifiedMask.Set<byte>(i, j, colorValue); // Left border
-                modifiedMask.Set<byte>(i, modifiedMask.Cols - 1 - j, colorValue); // Right border
-            }
-        }
+        // Bottom border
+        modifiedMask[new OpenCvSharp.Rect(0, modifiedMask.Rows - borderThickness, modifiedMask.Cols, borderThickness)]
+            .SetTo(new Scalar(colorValue));
+
+        // Left border
+        modifiedMask[new OpenCvSharp.Rect(0, 0, borderThickness, modifiedMask.Rows)]
+            .SetTo(new Scalar(colorValue));
+
+        // Right border
+        modifiedMask[new OpenCvSharp.Rect(modifiedMask.Cols - borderThickness, 0, borderThickness, modifiedMask.Rows)]
+            .SetTo(new Scalar(colorValue));
 
         if (DEBUG_FloodFill_Mask)
         {
@@ -1154,7 +1168,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         x = -x;
         y = -y;
 
-        return _MainCamera.ViewportToWorldPoint(new Vector3((x + 1) / 2, (y + 1) / 2, 0));
+        return _OrthographicCamera.ViewportToWorldPoint(new Vector3((x + 1) / 2, (y + 1) / 2, 0));
     }
 
     Vector3 DepthToViewportMapped(Vector2 depthPos)
@@ -1164,7 +1178,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         float depthWidth = _DepthWidth;   // e.g., 512
         float depthHeight = _DepthHeight; // e.g., 424
 
-        float camAspect = _MainCamera.aspect; // Unity camera (e.g. 16:9 = 1.777)
+        float camAspect = _OrthographicCamera.aspect; // Unity camera (e.g. 16:9 = 1.777)
         float depthAspect = depthWidth / depthHeight; // Kinect (e.g. 512 / 424 ≈ 1.2)
 
         float xNorm = depthPos.x / depthWidth;
@@ -1175,10 +1189,11 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         if (camAspect > depthAspect)
         {
             // 16:9 camera is wider — add pillarbox
-            float pillarbox = (1f - (depthAspect / camAspect)) / 2f;
+            float pillarbox = (1f - (depthAspect / camAspect)) ;
             float scaleX = depthAspect / camAspect;
             viewportX = pillarbox + xNorm * scaleX;
             viewportY = 1f - yNorm;
+            viewportX = viewportX + 0.47f; //- pillarbox to offset it back to center
         }
         else
         {
@@ -1189,7 +1204,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             viewportY = letterbox + (1f - yNorm) * scaleY;
         }
 
-        return _MainCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, 0));
+        return _OrthographicCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, 0));
     }
 
     private void ClearSpawnedObjects()

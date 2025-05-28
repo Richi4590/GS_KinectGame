@@ -5641,9 +5641,9 @@ Transform:
   m_GameObject: {fileID: 252019523}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0000014454126, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -43, y: 0.2, z: 66.4}
-  m_LocalScale: {x: 40, y: 0.2, z: 32.5}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -33, y: 0.2, z: 53.4}
+  m_LocalScale: {x: 47.5, y: 0.24739583, z: 39.583332}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 940335773}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -18999,7 +18999,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ContourAproximationMode: 2
-  DEBUG: 1
+  DEBUG: 0
   DEBUG_BINARY_IMAGE_PATH: BinaryTest
   _Camera: {fileID: 2064864233}
   DepthSourceManager: {fileID: 1022827879}
@@ -19014,10 +19014,10 @@ MonoBehaviour:
   currentMode: 1
   MinDepth: 1732
   MaxDepth: 1810
-  minBlobSize: 1
+  minBlobSize: 50
   maxBlobSize: 100000
-  dilationIterations: 1
-  erosionIterations: 1
+  dilationIterations: 0
+  erosionIterations: 0
   borderThickness: 55
   generated2DMeshObjScale: {x: 1, y: 1, z: 1}
   simplificationTolerance: 1
@@ -28522,7 +28522,6 @@ GameObject:
   - component: {fileID: 2064864228}
   - component: {fileID: 2064864233}
   - component: {fileID: 2064864232}
-  - component: {fileID: 2064864230}
   - component: {fileID: 2064864229}
   m_Layer: 0
   m_Name: MainCameraForKinect
@@ -28540,7 +28539,7 @@ Transform:
   m_GameObject: {fileID: 2064864227}
   serializedVersion: 2
   m_LocalRotation: {x: 0.76604444, y: 0, z: 0, w: 0.64278764}
-  m_LocalPosition: {x: 355.2, y: 0, z: 66.8}
+  m_LocalPosition: {x: 0, y: 0, z: 53}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -28553,7 +28552,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2064864227}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
   m_Name: 
@@ -28591,21 +28590,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!114 &2064864230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2064864227}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b92f3fb580bcfa04caaebcd08979308b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  target_offset: {x: 0, y: 0, z: -11}
-  camera_speed: 5
 --- !u!124 &2064864232
 Behaviour:
   m_ObjectHideFlags: 0
@@ -28613,7 +28597,7 @@ Behaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2064864227}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &2064864233
 Camera:
   m_ObjectHideFlags: 0
@@ -28621,7 +28605,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2064864227}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0.019607844}
@@ -28649,7 +28633,7 @@ Camera:
   far clip plane: 500
   field of view: 60
   orthographic: 1
-  orthographic size: 165
+  orthographic size: 200
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
