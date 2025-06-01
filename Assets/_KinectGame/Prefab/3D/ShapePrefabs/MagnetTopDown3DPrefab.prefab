@@ -103,7 +103,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
@@ -159,7 +159,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cff28c01d38d344cbe44e89f2136aec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Tag: Magnet
+  Tags:
+  - 
 --- !u!114 &3691404429211267427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -175,10 +176,10 @@ MonoBehaviour:
   affectedLayers:
     serializedVersion: 2
     m_Bits: 1
-  targetTag: MagnetTarget
-  forceStrength: 25
-  isPulling: 1
-  effectRadius: 14.22
+  targetCustomTag: MagnetTarget
+  forceStrength: 1000
+  isPulling: 0
+  effectRadius: 36.9
 --- !u!33 &7385383793465189577
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -275,7 +276,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
