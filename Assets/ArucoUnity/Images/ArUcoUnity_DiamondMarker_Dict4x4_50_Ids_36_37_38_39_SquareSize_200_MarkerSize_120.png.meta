@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      ArUcoUnity_DiamondMarker_Dict4x4_50_Ids_36_37_38_39_SquareSize_200_MarkerSize_120_0: -1050643303545638158
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

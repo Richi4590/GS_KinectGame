@@ -22,8 +22,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public string DEBUG_BINARY_IMAGE_PATH = "Assets/BinaryTest.png";
     public Camera _Camera;
     public GameObject DepthSourceManager;
-    public GameObject TopDownObjectPrefab3D;
-    public SerializedDictionaryStringGameObject TopDownObjectsPrefabs3D;
+    public ArucoGetIDFromImage arucoIDRetriever;
+    public SerializedDictionaryIntGameObject TopDownObjectsPrefabs3DDict;
     public GameObject DebugObjectCenterPrefab;
     public MeshRenderer depthTextureVisualDestinationMesh;
     public Transform depthChildrenRootObject;
@@ -39,6 +39,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public float viewPortXOffset = 0.0f;
     public Vector3 generated2DMeshObjScale = Vector3.one;
     [Min(0)] public float simplificationTolerance = 0.02f;
+    [Min(0)] public int fixedSquareImageSizeArucoCode = 50;
 
     public LayerMask layersToIgnoreMeshUpdates;  
     private Vector3 generatedMeshRotationOffset = Vector3.zero;
@@ -96,8 +97,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         _BinaryMaskTexture = new Texture2D(_DepthWidth, _DepthHeight);
         _OrthographicCamera = _Camera;
 
-        if (TopDownObjectsPrefabs3D == null)
-            TopDownObjectsPrefabs3D = GetComponent<SerializedDictionaryStringGameObject>();
+        if (TopDownObjectsPrefabs3DDict == null)
+            TopDownObjectsPrefabs3DDict = GetComponent<SerializedDictionaryIntGameObject>();
 
         // Allocate OpenCV Mats only once
         _BinaryImage = new Mat(_DepthHeight, _DepthWidth, MatType.CV_8UC1);
@@ -119,6 +120,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     // Coroutine that will execute every N frames
     IEnumerator ExecuteEveryNFrames()
     {
+        while (!_Sensor.IsOpen)
+            yield return null;
+
         while (true)
         {
             // Wait for N frames
@@ -235,7 +239,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         RenderTexture previous = RenderTexture.active;
         RenderTexture.active = rt;
 
-        Texture2D readableTex = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
+        Texture2D readableTex = new Texture2D(source.width, source.height, TextureFormat.RGB24, false);
         readableTex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
         readableTex.Apply();
 
@@ -329,21 +333,25 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         byte colorValue = 255; // White border color
 
-        // Top border
-        modifiedMask[new OpenCvSharp.Rect(0, 0, modifiedMask.Cols, borderThickness)]
-            .SetTo(new Scalar(colorValue));
+        if (borderThickness >= 1)
+        {
+            // Top border
+            modifiedMask[new OpenCvSharp.Rect(0, 0, modifiedMask.Cols, borderThickness)]
+                .SetTo(new Scalar(colorValue));
 
-        // Bottom border
-        modifiedMask[new OpenCvSharp.Rect(0, modifiedMask.Rows - borderThickness, modifiedMask.Cols, borderThickness)]
-            .SetTo(new Scalar(colorValue));
+            // Bottom border
+            modifiedMask[new OpenCvSharp.Rect(0, modifiedMask.Rows - borderThickness, modifiedMask.Cols, borderThickness)]
+                .SetTo(new Scalar(colorValue));
 
-        // Left border
-        modifiedMask[new OpenCvSharp.Rect(0, 0, borderThickness, modifiedMask.Rows)]
-            .SetTo(new Scalar(colorValue));
+            // Left border
+            modifiedMask[new OpenCvSharp.Rect(0, 0, borderThickness, modifiedMask.Rows)]
+                .SetTo(new Scalar(colorValue));
 
-        // Right border
-        modifiedMask[new OpenCvSharp.Rect(modifiedMask.Cols - borderThickness, 0, borderThickness, modifiedMask.Rows)]
-            .SetTo(new Scalar(colorValue));
+            // Right border
+            modifiedMask[new OpenCvSharp.Rect(modifiedMask.Cols - borderThickness, 0, borderThickness, modifiedMask.Rows)]
+                .SetTo(new Scalar(colorValue));
+
+        }
 
         if (DEBUG_FloodFill_Mask)
         {
@@ -462,7 +470,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             GameObject obj = null;
             if (closestObject != null && minDistance <= maxAllowedMovementRadius)
             {
-                GameObject newlyScannedPrefab = TopDownObjectsPrefabs3D.dict[""];//GetGameObjectPrefabFromCameraContour(contour, center3D);
+                //GameObject newlyScannedPrefab = TopDownObjectsPrefabs3DDict.dict[0];//GetGameObjectPrefabFromCameraContour(contour, center3D);
+                GameObject newlyScannedPrefab = GetGameObjectPrefabFromCameraContour(contour, center3D);
 
                 closestObject.TryGetComponent<CustomTag>(out CustomTag t1);
                 newlyScannedPrefab.TryGetComponent<CustomTag>(out CustomTag t2);
@@ -527,7 +536,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
                     if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
                         meshRenderer = obj.AddComponent<MeshRenderer>();
-                    meshRenderer.material = TopDownObjectPrefab3D.GetComponent<MeshRenderer>().sharedMaterial;
+                    meshRenderer.material = obj.GetComponent<MeshRenderer>().sharedMaterial;
 
                     // Optional: Enable mesh collider
                     if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
@@ -570,42 +579,40 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
         OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
 
-        /*
+        
         Rect colorRect;
-
 
         colorRect = MapDepthRectToColorSpace(boundingRect,
                                           _CoordinateMapper,
                                           _DepthManager.GetData(), _DepthWidth);
 
-
         colorRect = MapCenteredDepthRectToColorSpace(boundingRect, _CoordinateMapper,
-            _DepthManager.GetData(), _DepthWidth, _DepthHeight, 50);
-
+            _DepthManager.GetData(), cameraTex.width, cameraTex.height, _DepthWidth, _DepthHeight, fixedSquareImageSizeArucoCode);
 
         if (float.IsInfinity(colorRect.x) || float.IsInfinity(colorRect.y)
         || float.IsInfinity(colorRect.width) || float.IsInfinity(colorRect.height))
             return null;
 
 
-        Texture2D camSegment = null;//GetColorSegmentGPU(cameraTex, colorRect);
+        Texture2D camSegment = GetColorSegmentGPU(cameraTex, colorRect);
 
         if (camSegment != null)
         {
             if (QRCodeVisualizer.TryGetComponent<Image>(out Image img))
                 img.material.SetTexture("_MainTex", (Texture)camSegment);
         }
-        */
 
         // Instantiate object at calculated 3D center
-        //return InstantiateFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
+        GameObject obj = InstantiateFromArucoCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
 
+        /*
         GameObject obj = Instantiate(
-                    TopDownObjectsPrefabs3D.dict[""],
+                    TopDownObjectsPrefabs3DDict.dict[0],
                     center3D,
                     Quaternion.identity,
                     depthChildrenRootObject
                     );
+        */
 
         obj.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
 
@@ -624,8 +631,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         OpenCvSharp.Rect boundingRect = Cv2.BoundingRect(contour);
 
-        Rect colorRect; 
-        
+        Rect colorRect;
+
         /*
         colorRect = MapDepthRectToColorSpace(boundingRect,
                                           _CoordinateMapper,
@@ -633,13 +640,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         */
 
         colorRect = MapCenteredDepthRectToColorSpace(boundingRect, _CoordinateMapper,
-            _DepthManager.GetData(), _DepthWidth, _DepthHeight, 50);
+            _DepthManager.GetData(), cameraTex.width, cameraTex.height, _DepthWidth, _DepthHeight, fixedSquareImageSizeArucoCode);
 
 
         if (float.IsInfinity(colorRect.x) || float.IsInfinity(colorRect.y)
         || float.IsInfinity(colorRect.width) || float.IsInfinity(colorRect.height))
             return null;
-
+         
         Texture2D camSegment = GetColorSegmentGPU(cameraTex, colorRect);
          
         if (camSegment != null)
@@ -648,9 +655,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 img.material.SetTexture("_MainTex", (Texture)camSegment);
 
             // Instantiate object at calculated 3D center
-            //return GetPrefabFromQRCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
-
-            return TopDownObjectsPrefabs3D.dict[""];
+            return GetPrefabFromArucoCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
         }
 
         return null;
@@ -659,6 +664,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public Rect MapCenteredDepthRectToColorSpace(OpenCvSharp.Rect boundingRect,
                                                         CoordinateMapper coordMapper,
                                                         ushort[] depthData,
+                                                        int colorWidth,
+                                                        int colorHeight,
                                                         int depthWidth,
                                                         int depthHeight,
                                                         int fixedSize = 50)
@@ -682,6 +689,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         float halfSize = fixedSize / 2f;
         float colorX = colorCenter.X - halfSize;
         float colorY = colorCenter.Y - halfSize;
+
+        // Clamp position so that the rect fits entirely within the image
+        colorX = Mathf.Clamp(colorX, 0, colorWidth - fixedSize);
+        colorY = Mathf.Clamp(colorY, 0, colorHeight - fixedSize);
 
         return new Rect(colorX, colorY, fixedSize, fixedSize);
     }
@@ -774,11 +785,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         RenderTexture prev = RenderTexture.active;
 
         RenderTexture rt = new RenderTexture(source.width, source.height, 0);
+
         Graphics.Blit(source, rt); // draw source texture into RT
 
         RenderTexture.active = rt;
 
-        Texture2D cropped = new Texture2D((int)cropRect.width, (int)cropRect.height, TextureFormat.RGBA32, false);
+        Texture2D cropped = new Texture2D((int)cropRect.width, (int)cropRect.height, TextureFormat.RGB24, false);
+
         cropped.ReadPixels(cropRect, 0, 0);
         cropped.Apply();
 
@@ -810,7 +823,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             return null;
         }
 
-        Texture2D texture = new Texture2D(rgbaMat.Width, rgbaMat.Height, TextureFormat.RGBA32, false);
+        Texture2D texture = new Texture2D(rgbaMat.Width, rgbaMat.Height, TextureFormat.RGB24, false);
         byte[] data = new byte[rgbaMat.Rows * rgbaMat.Cols * 4];
         System.Runtime.InteropServices.Marshal.Copy(rgbaMat.Data, data, 0, data.Length);
         texture.LoadRawTextureData(data);
@@ -919,7 +932,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
                     if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
                         meshRenderer = obj.AddComponent<MeshRenderer>();
-                    meshRenderer.material = TopDownObjectPrefab3D.GetComponent<MeshRenderer>().sharedMaterial;
+                    meshRenderer.material = obj.GetComponent<MeshRenderer>().sharedMaterial;
 
                     // Optional: Enable mesh collider
                     if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
@@ -935,20 +948,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
     }
 
-    /*
-    private GameObject InstantiateFromQRCode(Texture2D colorTex, Vector3 center3D, Quaternion identity, Transform transform)
+    
+    private GameObject InstantiateFromArucoCode(Texture2D colorTex, Vector3 center3D, Quaternion identity, Transform transform)
     {
-        GameObject prefabRef = null;
-
-        string objectString = ReadQRCodeFromImage(colorTex, colorTex.width, colorTex.height);
-
-        if (!TopDownObjectsPrefabs3D.dict.ContainsKey(objectString) || TopDownObjectsPrefabs3D.dict[objectString] == null)
-        {
-            Debug.LogWarning("No Key (" + objectString + ") from Dictionary found or empty GameObject reference!");
-            return null;
-        }
-
-        prefabRef = TopDownObjectsPrefabs3D.dict[objectString];
+        GameObject prefabRef = GetPrefabFromArucoCode(colorTex, center3D, identity, transform);
 
         return Instantiate(
             prefabRef,
@@ -959,23 +962,26 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     }
 
 
-    private GameObject GetPrefabFromQRCode(Texture2D colorTex, Vector3 center3D, Quaternion identity, Transform transform)
+    private GameObject GetPrefabFromArucoCode(Texture2D colorTex, Vector3 center3D, Quaternion identity, Transform transform)
     {
         GameObject prefabRef = null;
 
-        string objectString = ReadQRCodeFromImage(colorTex, colorTex.width, colorTex.height);
+        int objectID = arucoIDRetriever.ReadIDFromImage(colorTex);
+        Debug.Log(objectID);
 
-        if (!TopDownObjectsPrefabs3D.dict.ContainsKey(objectString) || TopDownObjectsPrefabs3D.dict[objectString] == null)
+        if (!TopDownObjectsPrefabs3DDict.dict.ContainsKey(objectID) || TopDownObjectsPrefabs3DDict.dict[objectID] == null)
         {
-            Debug.LogWarning("No Key (" + objectString + ") from Dictionary found or empty GameObject reference!");
-            return null;
+            //Debug.LogWarning("No Key (" + objectID + ") from Dictionary found or empty GameObject reference!");
+            prefabRef = TopDownObjectsPrefabs3DDict.dict[0];
         }
-
-        prefabRef = TopDownObjectsPrefabs3D.dict[objectString];
+        else
+        {
+            prefabRef = TopDownObjectsPrefabs3DDict.dict[objectID];
+        }
 
         return prefabRef;
     }
-    */
+    
 
     public Mesh TriangulateFull(Vector3[] points, Vector3 center, float height)
     {

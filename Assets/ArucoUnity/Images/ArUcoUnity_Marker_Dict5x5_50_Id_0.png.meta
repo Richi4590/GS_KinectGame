@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      ArUcoUnity_Marker_Dict5x5_50_Id_0_0: -3884726235020770155
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

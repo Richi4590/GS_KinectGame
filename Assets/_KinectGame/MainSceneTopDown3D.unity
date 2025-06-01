@@ -18919,6 +18919,86 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 65, y: 5, z: 4}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1001 &814014812
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.35254064
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.1899835
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.45381436
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 575156134965177150, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2671693096164863537, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+        type: 3}
+      propertyPath: m_Name
+      value: ArucoIDDetector
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3350ac7b1304d4f4e80ffcae1b561da8, type: 3}
+--- !u!114 &814014813 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2432248003552412163, guid: 3350ac7b1304d4f4e80ffcae1b561da8,
+    type: 3}
+  m_PrefabInstance: {fileID: 814014812}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabffa9cf7b77f4e87b3e4cd2e23f7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &820191213
 GameObject:
   m_ObjectHideFlags: 0
@@ -19004,32 +19084,32 @@ MonoBehaviour:
   DEBUG_BINARY_IMAGE_PATH: BinaryTest
   _Camera: {fileID: 2064864233}
   DepthSourceManager: {fileID: 1022827879}
-  TopDownObjectPrefab3D: {fileID: 6662532282616018069, guid: 4d8b85235e77429488c8243c656707b9,
-    type: 3}
-  TopDownObjectsPrefabs3D: {fileID: 862189199}
+  arucoIDRetriever: {fileID: 814014813}
+  TopDownObjectsPrefabs3DDict: {fileID: 862189199}
   DebugObjectCenterPrefab: {fileID: 6662532282616018069, guid: affac7986c3c79e4cb793683bd4eadb7,
     type: 3}
   depthTextureVisualDestinationMesh: {fileID: 252019525}
   depthChildrenRootObject: {fileID: 1158463634}
   QRCodeVisualizer: {fileID: 891506640}
   currentMode: 1
-  MinDepth: 1732
-  MaxDepth: 1800
-  minBlobSize: 50
-  maxBlobSize: 100000
+  MinDepth: 792
+  MaxDepth: 872
+  minBlobSize: 1078
+  maxBlobSize: 2750
   dilationIterations: 0
   erosionIterations: 0
-  borderThickness: 25
+  borderThickness: 0
   viewPortXOffset: 0.47
   generated2DMeshObjScale: {x: 1, y: 1, z: 1}
   simplificationTolerance: 0
+  fixedSquareImageSizeArucoCode: 100
   layersToIgnoreMeshUpdates:
     serializedVersion: 2
     m_Bits: 8
   flipSpriteX: 0
   flipSpriteY: 0
-  flipDepthMapX: 1
-  flipDepthMapY: 1
+  flipDepthMapX: 0
+  flipDepthMapY: 0
   maxAllowedMovementRadius: 1
   collisionWallHeight: 50
   visualizeWithLines: 1
@@ -19044,28 +19124,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 862189195}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6f2e1542cf93684eb9e29498dbb36b5, type: 3}
+  m_Script: {fileID: 11500000, guid: 1e65fa0598724754f8c5c70980bf3b0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   dict:
     _serializedList:
-    - Key: 
+    - Key: 0
       Value: {fileID: 6662532282616018069, guid: 4d8b85235e77429488c8243c656707b9,
         type: 3}
-    - Key: Green
-      Value: {fileID: 6662532282616018069, guid: f6522e7b86ca7dc48a5bb80b05b5a032,
-        type: 3}
-    - Key: Red
-      Value: {fileID: 6662532282616018069, guid: 34bdcd4607d8c3747a943292cec74d2e,
-        type: 3}
-    - Key: Magnet
+    - Key: 1
       Value: {fileID: 6662532282616018069, guid: 635ae0356e56afa49b177153f3502b65,
         type: 3}
-    - Key: WindBlower
+    - Key: 2
       Value: {fileID: 6662532282616018069, guid: 12bfc415caba1694390296ea006eda00,
         type: 3}
-    - Key: Reflector
+    - Key: 3
       Value: {fileID: 6662532282616018069, guid: 2ab46bd15db1255479a0f6d3db338c53,
+        type: 3}
+    - Key: 4
+      Value: {fileID: 6662532282616018069, guid: f6522e7b86ca7dc48a5bb80b05b5a032,
+        type: 3}
+    - Key: 5
+      Value: {fileID: 6662532282616018069, guid: 34bdcd4607d8c3747a943292cec74d2e,
         type: 3}
 --- !u!1 &867411052
 GameObject:
@@ -28139,6 +28219,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4939810972105354843, guid: bf977537106d55b49b58ead93f47217b,
         type: 3}
+      propertyPath: travelMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4939810972105354843, guid: bf977537106d55b49b58ead93f47217b,
+        type: 3}
       propertyPath: m_normalizedT
       value: 0
       objectReference: {fileID: 0}
@@ -29220,6 +29305,7 @@ SceneRoots:
   - {fileID: 660022886}
   - {fileID: 253358861}
   - {fileID: 862189197}
+  - {fileID: 814014812}
   - {fileID: 772381946}
   - {fileID: 940335773}
   - {fileID: 112136119}

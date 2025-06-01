@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2671693096164863537
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 575156134965177150}
+  - component: {fileID: 2432248003552412163}
+  - component: {fileID: 7829756094287495839}
+  m_Layer: 0
+  m_Name: ArucoIDDetector
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &575156134965177150
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2671693096164863537}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.35254064, y: 0.1899835, z: -0.45381436}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2432248003552412163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2671693096164863537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faabffa9cf7b77f4e87b3e4cd2e23f7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DebugWithTex: 1
+  debugTex: {fileID: 2800000, guid: fccec8ce2a9725446a1ef45904909e53, type: 3}
+  webCam: {fileID: 0}
+  markerTypeDict: 0
+--- !u!114 &7829756094287495839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2671693096164863537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91ed676394d8639429b6c76f63c37c18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  adaptiveThreshWinSizeMin: 3
+  adaptiveThreshWinSizeMax: 23
+  adaptiveThreshWinSizeStep: 10
+  adaptiveThreshConstant: 7
+  minMarkerPerimeterRate: 0.03
+  maxMarkerPerimeterRate: 4
+  polygonalApproxAccuracyRate: 0.03
+  minCornerDistanceRate: 0.05
+  minDistanceToBorder: 3
+  minMarkerDistanceRate: 0.05
+  cornerRefinementMethod: 0
+  cornerRefinementWinSize: 5
+  cornerRefinementMaxIterations: 30
+  cornerRefinementMinAccuracy: 0.1
+  markerBorderBits: 1
+  perspectiveRemovePixelPerCell: 8
+  perspectiveRemoveIgnoredMarginPerCell: 0.13
+  maxErroneousBitsInBorderRate: 0.35
+  minOtsuStdDev: 5
+  errorCorrectionRate: 0.6

@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      ArUcoUnity_GridBoard_Dict4x4_50_X_7_Y_5_MarkerSize_120_0: 6307823098267420297
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
