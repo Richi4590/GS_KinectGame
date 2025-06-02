@@ -49,7 +49,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4267791370405610831}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -64,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: e5c9aeb5c6b7239459545841dd2e61e2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -179,11 +179,11 @@ MonoBehaviour:
   targetCustomTag: WindTarget
   forceStrength: 10
   effectRadius: 10
-  windDirection: {x: 0, y: 0, z: 1}
-  isConeShape: 1
   coneAngle: 30
   boxWidth: 5
   boxHeight: 5
+  isConeShape: 1
+  direction: {x: 0, y: 0, z: 0}
 --- !u!33 &7385383793465189577
 MeshFilter:
   m_ObjectHideFlags: 0

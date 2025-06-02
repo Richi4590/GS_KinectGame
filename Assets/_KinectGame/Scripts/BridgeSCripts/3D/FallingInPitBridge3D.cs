@@ -1,12 +1,13 @@
 using UnityEngine;
 using System.Collections.Generic;
+using BezierSolution;
 
 [RequireComponent(typeof(Rigidbody))]
 public class FallingInPitBridge3D : MonoBehaviour
 {
     [Header("Blocking Area Settings")]
     public Color gizmoColor = new Color(1, 0, 0, 0.3f);
-
+    private bool bridgePlaced = false;
     private void Awake()
     {
         Rigidbody rb = GetComponent<Rigidbody>();
@@ -31,16 +32,29 @@ public class FallingInPitBridge3D : MonoBehaviour
 
     private void OnTriggerEnter(Collider collision)
     {
-        if (collision.gameObject.CompareTag("GeneratedMeshObject"))
+        if (collision.gameObject.TryGetComponent<CustomTag>(out CustomTag t))
         {
-            int newLayer = LayerMask.NameToLayer("WalkableBridge"); // Get the layer ID by name
-            if (newLayer != -1) // Check if the layer is valid
-                collision.gameObject.layer = newLayer;
+            if (t.Tags.Contains("Bridge"))
+            {
+                int newLayer = LayerMask.NameToLayer("WalkableBridge"); // Get the layer ID by name
+                if (newLayer != -1) // Check if the layer is valid
+                    collision.gameObject.layer = newLayer;
 
-            MeshCollider meshColl = collision.gameObject.GetComponent<MeshCollider>();
+                MeshCollider meshColl = collision.gameObject.GetComponent<MeshCollider>();
 
-            meshColl.convex = true;
-            meshColl.isTrigger = true;
+                meshColl.convex = true;
+                meshColl.isTrigger = true;
+
+                bridgePlaced = true;
+            }
+        }
+
+        if (!bridgePlaced)
+        {
+            if (collision.gameObject.CompareTag("Player"))
+            {
+                BezierWalkerWithSpeed.Instance.ResetToLastCheckpoint();
+            }
         }
     }
 
@@ -57,16 +71,20 @@ public class FallingInPitBridge3D : MonoBehaviour
 
     private void OnTriggerExit(Collider collision)
     {
-        if (collision.gameObject.CompareTag("GeneratedMeshObject"))
+        if (collision.gameObject.TryGetComponent<CustomTag>(out CustomTag t))
         {
-            int newLayer = LayerMask.NameToLayer("Default"); // Get the layer ID by name
-            if (newLayer != -1) // Check if the layer is valid
-                collision.gameObject.layer = newLayer;
+            if (t.Tags.Contains("Bridge"))
+            {
+                int newLayer = LayerMask.NameToLayer("Default"); // Get the layer ID by name
+                if (newLayer != -1) // Check if the layer is valid
+                    collision.gameObject.layer = newLayer;
 
-            MeshCollider meshColl = collision.gameObject.GetComponent<MeshCollider>();
+                MeshCollider meshColl = collision.gameObject.GetComponent<MeshCollider>();
 
-            meshColl.convex = false;
-            meshColl.isTrigger = false;
+                meshColl.convex = false;
+                meshColl.isTrigger = false;
+                bridgePlaced = false;
+            }
         }
     }
 }

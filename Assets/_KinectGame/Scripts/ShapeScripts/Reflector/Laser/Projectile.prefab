@@ -107,7 +107,7 @@ MonoBehaviour:
   debugRotation: 1
   rotationOffset: {x: 0, y: 0, z: 0}
   reflectionForceMultiplier: 1
-  destroyProjectileAfterNSeconds: 10
+  destroyProjectileAfterNSeconds: 30
   tagOfObjectToReflectFrom: Reflector
   sparksPrefabs:
   - {fileID: 1855340746554395461, guid: 49011e57640af4346b984abcfb1cf581, type: 3}

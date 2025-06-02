@@ -673,6 +673,57 @@ namespace BezierSolution
 			return endPoint;
 		}
 
+        public BezierPoint GetPrevBezierPoint(float normalizedT)
+        {
+            if (!m_loop)
+            {
+                if (normalizedT <= 0f)
+                    return endPoints[0];
+                else if (normalizedT >= 1f)
+                    return endPoints[endPoints.Count - 1];
+            }
+            else
+                normalizedT = ((normalizedT % 1f) + 1f) % 1f;
+
+            float t = normalizedT * (m_loop ? endPoints.Count : (endPoints.Count - 1));
+
+            BezierPoint startPoint, endPoint;
+
+            int startIndex = (int)t;
+            int endIndex = startIndex + 1;
+
+            if (endIndex == endPoints.Count)
+                endIndex = 0;
+
+            startPoint = endPoints[startIndex];
+            endPoint = endPoints[endIndex];
+
+            return startPoint;
+        }
+
+        public float GetNormalizedTFromBezierPoint(BezierPoint point)
+        {
+            int index = endPoints.IndexOf(point);
+            if (index == -1)
+            {
+                Debug.LogError("BezierPoint not found in endPoints.");
+                return -1f;
+            }
+
+            int segmentCount = m_loop ? endPoints.Count : endPoints.Count - 1;
+
+            // Clamp to valid segment indices
+            if (!m_loop)
+            {
+                if (index == 0) return 0f;
+                if (index >= endPoints.Count - 1) return 1f;
+            }
+
+            float normalizedT = (float)index / segmentCount;
+
+            return normalizedT;
+        }
+
         public Vector3 GetNextBezierPointPosition(float normalizedT)
         {
             if (!m_loop)

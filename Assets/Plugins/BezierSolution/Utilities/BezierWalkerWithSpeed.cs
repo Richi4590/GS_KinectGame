@@ -41,11 +41,22 @@ namespace BezierSolution
 			set { isGoingForward = ( speed >= 0f ) == value; }
 		}
 
-		public UnityEvent onPathCompleted = new UnityEvent();
+		public UnityEvent onPathCompleted= new UnityEvent();
 		private bool onPathCompletedCalledAt1 = false;
 		private bool onPathCompletedCalledAt0 = false;
 
-		public void StartMoving()
+		public static BezierWalkerWithSpeed Instance;
+
+
+        private void Awake()
+        {
+			if (Instance == null)
+				Instance = this;
+			else
+				Destroy(this);
+        }
+
+        public void StartMoving()
 		{
 			shouldWalk = true;
 			speed = initialSpeed;
@@ -80,6 +91,13 @@ namespace BezierSolution
             Execute(Time.deltaTime);
         }
 
+        public void ResetToLastCheckpoint()
+        {
+            shouldWalk = false;
+			m_normalizedT = spline.GetNormalizedTFromBezierPoint(lastCheckpoint);
+            Execute(Time.deltaTime);
+        }
+
         public void Reset()
         {
             shouldWalk = false;
@@ -107,21 +125,21 @@ namespace BezierSolution
 			{
 				Execute(Time.deltaTime);
 
-				/*
-				if (transform.position.x <= 0.1f && transform.position.z <= 0.1f)
+				if (transform.position.x <= 0.2f && transform.position.z <= 0.2f)
 				{
-					BezierPoint p = spline.GetNextBezierPoint(m_normalizedT);
+					BezierPoint p = spline.GetPrevBezierPoint(m_normalizedT);
                     if (lastCheckpoint != p)
                         lastCheckpoint = p;
 				}
-				*/
-
+			
 			}
 		}
 
         public override void Execute( float deltaTime )
 		{
-			transform.position = spline.MoveAlongSpline( ref m_normalizedT, ( isGoingForward ? speed : -speed ) * deltaTime );
+			Vector3 newPos = spline.MoveAlongSpline(ref m_normalizedT, (isGoingForward ? speed : -speed) * deltaTime);
+
+            transform.position = new Vector3(newPos.x, transform.position.y, newPos.z);
 			RotateTarget( transform, m_normalizedT, lookAt, rotationLerpModifier * deltaTime );
 			PostProcessMovement( travelMode, ref onPathCompletedCalledAt0, ref onPathCompletedCalledAt1, onPathCompleted );
 		}

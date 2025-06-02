@@ -37,7 +37,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public int erosionIterations = 2;
     [Range(0, 100)] public int borderThickness = 0;
     [Min(0)] public float viewPortXOffset = 0.0f;
-    public Vector3 generated2DMeshObjScale = Vector3.one;
     [Min(0)] public float simplificationTolerance = 0.02f;
     [Min(0)] public int fixedSquareImageSizeArucoCode = 50;
 
@@ -499,6 +498,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
                 if (!_SpawnedObjects.Contains(obj))
                     _SpawnedObjects.Add(obj);
+
+                updatedObjects.Add(obj);
+                VisualizeWorldPoints3D(obj, worldPoints3D);
             }
             else
             {
@@ -509,44 +511,46 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                     trackedObjects[obj] = newCenter2D;
                     _SpawnedObjects.Add(obj);
                 }
-            }
 
-            if (obj != null)
-            {
-                GameObject childPlaneObj = obj.transform.GetChild(0).gameObject;
-                updatedObjects.Add(obj);
 
-                Vector3 localCenter = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(center3D);
-                VisualizeWorldPoints3D(obj, worldPoints3D);
-
-                Mesh planeMesh = TriangulateFull(worldPoints3D, localCenter, collisionWallHeight);
-                Mesh wallMesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
-
-                if (wallMesh != null)
+                if (obj != null)
                 {
-                    if (!childPlaneObj.TryGetComponent<MeshFilter>(out var meshFilter))
-                        meshFilter = childPlaneObj.AddComponent<MeshFilter>();
-                    meshFilter.mesh = planeMesh;
+                    GameObject childPlaneObj = obj.transform.GetChild(0).gameObject;
+                    updatedObjects.Add(obj);
 
-                    if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
-                        childMeshCollider = obj.AddComponent<MeshCollider>();
-                    childMeshCollider.sharedMesh = planeMesh;
+                    Vector3 localCenter = depthTextureVisualDestinationMesh.transform.InverseTransformPoint(center3D);
+                    VisualizeWorldPoints3D(obj, worldPoints3D);
 
-                    //------------
+                    Mesh planeMesh = TriangulateFull(worldPoints3D, localCenter, collisionWallHeight);
+                    Mesh wallMesh = ExtrudePolygon(worldPoints3D, localCenter, collisionWallHeight);
 
-                    if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
-                        meshRenderer = obj.AddComponent<MeshRenderer>();
-                    meshRenderer.material = obj.GetComponent<MeshRenderer>().sharedMaterial;
+                    if (wallMesh != null)
+                    {
+                        if (!childPlaneObj.TryGetComponent<MeshFilter>(out var meshFilter))
+                            meshFilter = childPlaneObj.AddComponent<MeshFilter>();
+                        meshFilter.mesh = planeMesh;
 
-                    // Optional: Enable mesh collider
-                    if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
-                        meshCollider = obj.AddComponent<MeshCollider>();
-                    meshCollider.sharedMesh = wallMesh;
+                        if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
+                            childMeshCollider = obj.AddComponent<MeshCollider>();
+                        childMeshCollider.sharedMesh = planeMesh;
+
+                        //------------
+
+                        if (!obj.TryGetComponent<MeshRenderer>(out var meshRenderer))
+                            meshRenderer = obj.AddComponent<MeshRenderer>();
+                        meshRenderer.material = obj.GetComponent<MeshRenderer>().sharedMaterial;
+
+                        // Optional: Enable mesh collider
+                        if (!obj.TryGetComponent<MeshCollider>(out var meshCollider))
+                            meshCollider = obj.AddComponent<MeshCollider>();
+                        meshCollider.sharedMesh = wallMesh;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Failed to create mesh for object with contour.");
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning("Failed to create mesh for object with contour.");
-                }
+
             }
         }
 
