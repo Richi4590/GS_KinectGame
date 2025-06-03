@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2344154617470508567}
   - component: {fileID: 5769782545058964870}
   - component: {fileID: 6193828968380600686}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: WalkableTopFace
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -124,7 +124,7 @@ GameObject:
   - component: {fileID: 5420226506030738918}
   - component: {fileID: 7759854340579345937}
   - component: {fileID: 9003098484649230243}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: MagnetTopDown3DPrefab
   m_TagString: GeneratedMeshObject
   m_Icon: {fileID: 0}

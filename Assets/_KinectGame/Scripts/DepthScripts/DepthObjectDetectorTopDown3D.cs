@@ -971,7 +971,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         GameObject prefabRef = null;
 
         int objectID = arucoIDRetriever.ReadIDFromImage(colorTex);
-        Debug.Log(objectID);
+        //Debug.Log(objectID);
 
         if (!TopDownObjectsPrefabs3DDict.dict.ContainsKey(objectID) || TopDownObjectsPrefabs3DDict.dict[objectID] == null)
         {

@@ -26,7 +26,23 @@ public class Utilities : MonoBehaviour
 
         return overlapPercentage >= threshold;
     }
+    
+    public static bool HasCustomTag(GameObject g, List<string> TagsToCheckFor)
+    {
+        if (g.TryGetComponent<CustomTag>(out CustomTag t))
+        {
+            foreach (string customTagEntry in t.Tags)
+            {
+                if (TagsToCheckFor.Contains(customTagEntry))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
+        return false;
+    }
 
     public static float GetColliderOverlapArea(Collider2D colliderA, Collider2D colliderB)
     {

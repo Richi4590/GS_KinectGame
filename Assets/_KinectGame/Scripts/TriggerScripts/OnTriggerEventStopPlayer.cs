@@ -27,7 +27,10 @@ public class OnTriggerEventStopPlayer : OnTriggerEvent
     public override void OnCollisionExit(Collision collision)
     {
         if (CheckIfCollisionObjectHasCustomTag(collision))
+        {
             _OnCollisionEnter.Invoke();
+            BezierWalkerWithSpeed.Instance.StartMoving();
+        }
 
     }
 
@@ -49,6 +52,9 @@ public class OnTriggerEventStopPlayer : OnTriggerEvent
     public override void OnTriggerExit(Collider other)
     {
         if (CheckIfColliderHasCustomTag(other))
+        {
             _OnTriggerLeave.Invoke();
+            BezierWalkerWithSpeed.Instance.StartMoving();
+        }
     }
 }

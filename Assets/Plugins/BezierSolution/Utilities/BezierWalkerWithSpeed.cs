@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 
+
 namespace BezierSolution
 {
 	[AddComponentMenu( "Bezier Solution/Bezier Walker With Speed" )]
@@ -12,16 +13,19 @@ namespace BezierSolution
 
         public BezierSpline spline;
 		public TravelMode travelMode;
+        public Animator anim;
 
-		public float speed = 5f;
+        public float speed = 5f;
 		[SerializeField]
 		[Range( 0f, 1f )]
 		private float m_normalizedT = 0f;
 
 		private float initialSpeed = 0;
 		private BezierPoint lastCheckpoint;
-		
-		public override BezierSpline Spline { get { return spline; } }
+
+
+
+        public override BezierSpline Spline { get { return spline; } }
 
 		public override float NormalizedT
 		{
@@ -59,6 +63,7 @@ namespace BezierSolution
         public void StartMoving()
 		{
 			shouldWalk = true;
+			//anim.SetBool(animationDict["Run"], true);
 			speed = initialSpeed;
 		}
 
@@ -93,8 +98,14 @@ namespace BezierSolution
 
         public void ResetToLastCheckpoint()
         {
+            m_normalizedT = spline.GetNormalizedTFromBezierPoint(lastCheckpoint);
+            Execute(Time.deltaTime);
+        }
+
+        public void ResetToLastCheckpointNotMoving()
+        {
             shouldWalk = false;
-			m_normalizedT = spline.GetNormalizedTFromBezierPoint(lastCheckpoint);
+            m_normalizedT = spline.GetNormalizedTFromBezierPoint(lastCheckpoint);
             Execute(Time.deltaTime);
         }
 
@@ -108,6 +119,7 @@ namespace BezierSolution
         {
 			initialSpeed = speed;
             lastCheckpoint = spline.endPoints[0];
+			//animationDict = GetComponent<SerializedDictionary>();
         }
 
         private void Update()

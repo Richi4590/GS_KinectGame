@@ -7,11 +7,12 @@ public class ShootTrigger : MonoBehaviour
     public GameObject projectilePrefab; // The projectile to be fired
     public Transform projectileSpawnPoint; // Where the projectile spawns
     public float projectileSpeed = 10f;
-
+    public bool autoShoot = false;
+    public float shootNSeconds = 2f;
     // Start is called before the first frame update
     void Start()
     {
-        
+        StartCoroutine(ShootAfterNSecondsCoroutine());
     }
 
     // Update is called once per frame
@@ -20,6 +21,15 @@ public class ShootTrigger : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R))
         {
             ShootProjectile();
+        }
+    }
+
+    private IEnumerator ShootAfterNSecondsCoroutine()
+    {
+        while (autoShoot)
+        {
+            ShootProjectile();
+            yield return new WaitForSeconds(shootNSeconds);
         }
     }
 
