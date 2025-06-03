@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 6094706665570229356}
   - component: {fileID: 6481324389586922877}
   m_Layer: 6
-  m_Name: Projectile
+  m_Name: ProjectileLongDuration
   m_TagString: Laser
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -122,7 +122,7 @@ MonoBehaviour:
   debugRotation: 1
   rotationOffset: {x: 0, y: 0, z: 0}
   reflectionForceMultiplier: 1
-  destroyProjectileAfterNSeconds: 30
+  destroyProjectileAfterNSeconds: 5
   tagOfObjectToReflectFrom: Reflector
   sparksPrefabs:
   - {fileID: 1855340746554395461, guid: 49011e57640af4346b984abcfb1cf581, type: 3}

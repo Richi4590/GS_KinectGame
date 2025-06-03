@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &543748337398571626
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.74074084
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.74074084
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.74074084
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -21.460003
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.09999877
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -32.827606
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_Name
+      value: LemmingShibaInu
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5949290030468237419}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4398099284290602293}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1786571913173922555}
+  m_SourcePrefab: {fileID: 100100000, guid: 2576a0aaa532e9f48ae7b83a5ade8919, type: 3}
+--- !u!1 &813640711333535547 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 2576a0aaa532e9f48ae7b83a5ade8919,
+    type: 3}
+  m_PrefabInstance: {fileID: 543748337398571626}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5949290030468237419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813640711333535547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dcee41e555662f45851bf8c7cafccb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentState: 0
+  wanderRadius: 5
+  moveSpeed: 5
+--- !u!114 &4398099284290602293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813640711333535547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cff28c01d38d344cbe44e89f2136aec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Tags:
+  - Lemming
+--- !u!65 &1786571913173922555
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813640711333535547}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 3.28, z: 4.13}
+  m_Center: {x: 0, y: 1.5, z: 0.45}

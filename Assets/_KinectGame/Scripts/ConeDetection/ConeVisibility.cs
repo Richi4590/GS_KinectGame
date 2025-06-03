@@ -2,13 +2,65 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer)), ExecuteInEditMode]
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class ConeTrigger : MonoBehaviour
 {
-    [Header("FOV Settings")]
-    public float viewRadius = 10f;
-    [Range(0, 360)] public float viewAngle = 90f;
-    public int rayCount = 50;
+    public float ViewRadius
+    {
+        get => _viewRadius;
+        set
+        {
+            if (_viewRadius != value)
+            {
+                _viewRadius = value;
+                OnViewSettingsChanged();
+            }
+        }
+    }
+
+    public float ViewAngle
+    {
+        get => _viewAngle;
+        set
+        {
+            if (_viewAngle != value)
+            {
+                _viewAngle = value;
+                OnViewSettingsChanged();
+            }
+        }
+    }
+
+    public int Resolution
+    {
+        get => _resolution;
+        set
+        {
+            if (_resolution != value)
+            {
+                _resolution = value;
+                OnViewSettingsChanged();
+            }
+        }
+    }
+
+    public int RayCount
+    {
+        get => _rayCount;
+        set
+        {
+            if (_rayCount != value)
+            {
+                _rayCount = value;
+                OnViewSettingsChanged();
+            }
+        }
+    }
+
 
     [Header("Layer Masks")]
     public LayerMask targetMask;     // e.g., "Player"
@@ -18,57 +70,62 @@ public class ConeTrigger : MonoBehaviour
     public bool drawMesh = true;
 
 
+    [Header("Send Message Settings")]
+    public bool AlsoSendMessages = false;
+    public List<string> TagsToReactTo = new List<string>();
+    public List<string> functionStrings = new List<string>();
+
     [Header("Debug")]
     public Color rayColor = new Color(1, 1, 0, 0.2f);
     public List<Transform> visibleTargets = new List<Transform>();
 
-    public UnityEvent onSight;
-
+    [Header("FOV Settings")]
+    [SerializeField] private float _viewRadius = 10;
+    [SerializeField][Range(0, 360)] public float _viewAngle = 90f;
+    [SerializeField][Min(1)] private int _rayCount = 50;
+    [SerializeField][Min(1)] private int _resolution = 5;
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private Mesh coneMesh;
     private List<LineRenderer> lineRenderers = new List<LineRenderer>();
 
-    public int resolution = 5;
+    public UnityEvent onSight;
 
-    void Start()
+    private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         meshRenderer = GetComponent<MeshRenderer>();
         meshRenderer.enabled = drawMesh;
+    }
+
+    void Start()
+    {
+        GenerateConeMesh();
+    }
+
+    private void OnValidate()
+    {
+        if (!Application.isPlaying)
+            OnViewSettingsChanged();
+    }
+
+
+    void FixedUpdate()
+    {
+
+        visibleTargets.Clear();
 
         foreach (Transform child in transform)
         {
             Destroy(child.gameObject);
         }
 
-        GenerateConeMesh();
-    }
+        lineRenderers.Clear();
 
+        float angleStep = ViewAngle / (RayCount - 1);
+        Quaternion startRot = Quaternion.Euler(0, -_viewAngle / 2f, 0);
 
-    void Update()
-    {
-        if (Application.isEditor)
-            GenerateConeMesh();
-
-        visibleTargets.Clear();
-
-        if (Application.isPlaying)
-        {
-
-            // Clear previous LineRenderersS
-            foreach (var lr in lineRenderers)
-            {
-                if (lr != null)
-                    Destroy(lr.gameObject);
-            }
-            lineRenderers.Clear();
-        }
-
-        float angleStep = viewAngle / (rayCount - 1);
-        Quaternion startRot = Quaternion.Euler(0, -viewAngle / 2f, 0);
-
-        for (int i = 0; i < rayCount; i++)
+        for (int i = 0; i < RayCount; i++)
         {
             float angle = angleStep * i;
             Vector3 dir = transform.rotation * startRot * Quaternion.Euler(0, angle, 0) * Vector3.forward;
@@ -76,19 +133,26 @@ public class ConeTrigger : MonoBehaviour
             Ray ray = new Ray(transform.position, dir);
             Vector3 endPoint;
 
-            if (Physics.Raycast(ray, out RaycastHit hit, viewRadius, targetMask | obstaclesMask))
+            if (Physics.Raycast(ray, out RaycastHit hit, ViewRadius, targetMask | obstaclesMask))
             {
-                endPoint = hit.point;
+                endPoint = hit.point; 
 
                 if (((1 << hit.collider.gameObject.layer) & targetMask) != 0)
                 {
                     visibleTargets.Add(hit.transform);
                     onSight.Invoke();
+
+                    if (AlsoSendMessages)
+                    {
+                        if (Utilities.HasCustomTag(hit.collider.gameObject, TagsToReactTo))
+                            foreach (string functionString in functionStrings)
+                                hit.collider.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
+                    }
                 }
             }
             else
             {
-                endPoint = transform.position + dir * viewRadius;
+                endPoint = transform.position + dir * ViewRadius;
             }
 
             if (drawRays)
@@ -101,6 +165,10 @@ public class ConeTrigger : MonoBehaviour
 
     }
 
+    private void OnViewSettingsChanged()
+    {
+        GenerateConeMesh();
+    }
 
     void GenerateConeMesh()
     {
@@ -110,13 +178,13 @@ public class ConeTrigger : MonoBehaviour
 
         vertices.Add(Vector3.zero); // origin point
 
-        float angleStep = viewAngle / resolution;
-        for (int i = 0; i <= resolution; i++)
+        float angleStep = ViewAngle / Resolution;
+        for (int i = 0; i <= Resolution; i++)
         {
-            float angle = -viewAngle / 2f + angleStep * i;
+            float angle = -ViewAngle / 2f + angleStep * i;
             Vector3 localDir = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
-            Vector3 worldEnd = transform.position + (transform.rotation * localDir * viewRadius);
+            Vector3 worldEnd = transform.position + (transform.rotation * localDir * ViewRadius);
             Vector3 localEnd = transform.InverseTransformPoint(worldEnd);
             vertices.Add(localEnd);
         }
@@ -132,7 +200,21 @@ public class ConeTrigger : MonoBehaviour
         coneMesh.SetTriangles(triangles, 0);
         coneMesh.RecalculateNormals();
 
-        meshFilter.mesh = coneMesh;
+        if (!Application.isPlaying)
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (this != null)
+                {
+                    meshFilter = GetComponent<MeshFilter>();
+                    meshFilter.mesh = coneMesh;
+                }
+            };
+            return;
+        }
+        else
+            meshFilter.mesh = coneMesh;
+
     }
 
     void CreateRayLine(Vector3 start, Vector3 end)
