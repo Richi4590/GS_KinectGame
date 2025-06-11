@@ -3,15 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class MarchManager : MonoBehaviour
+public class LemmingsMarchManager : MonoBehaviour
 {
+    [Header("Lemming Settings")]
     public GameObject characterPrefab;
+    public List<string> TagsLemmingsHave = new List<string>();
+    public List<string> TagsLemmingsShouldReactTo = new List<string>();
+    public LayerMask layersLemmingsIgnore;
+    public float lemmingMoveSpeed = 2f;
+
+    [Header("Spawn Settings")]
     [Min(0)] public int characterCount = 10;
     public float spawnRadius = 5f;
     public float delayBetweenMarches = 1f;
     public Transform lemmingsSpawnRoot;
     public Transform exitPoint;
     public Vector2 exitDirection;
+    public bool destroyLemmingsIfRespawns = false;
+
 
     public bool StartMarching
     {
@@ -83,8 +92,11 @@ public class MarchManager : MonoBehaviour
                 {
                     if (idleLemmings[0] != null)
                     {
-                        idleLemmings[0].transform.rotation = Quaternion.LookRotation(flatDirection, Vector3.up);
+                        while (!idleLemmings[0].LemmingInitialized)
+                            yield return null;
+
                         idleLemmings[0].BeginMarching(exitPoint.transform.position);
+                        idleLemmings[0].transform.rotation = Quaternion.LookRotation(flatDirection, Vector3.up);
                         idleLemmings.Remove(idleLemmings[0]);
                     }
                 }
@@ -102,20 +114,43 @@ public class MarchManager : MonoBehaviour
         Quaternion randomRot = Quaternion.Euler(0, Random.Range(0, 360f), 0);
         GameObject characterObj = Instantiate(characterPrefab, spawnPos, randomRot, lemmingsSpawnRoot);
         LemmingsControllerAI lemmingController = characterObj.GetComponent<LemmingsControllerAI>();
+        lemmingController.InitLemming(this, lemmingMoveSpeed, TagsLemmingsHave, TagsLemmingsShouldReactTo, layersLemmingsIgnore);
+
         spawnedLemmings.Add(lemmingController);
         idleLemmings.Add(lemmingController);
         lemmingController.OnDestroyEvent += LemmingDestroyed;
+        lemmingController.OnRespawnEvent += LemmingRespawned;
+    }
+
+    public void RespawnLemming(LemmingsControllerAI respawnedLemming)
+    {
+        respawnedLemming.currentState = LemmingsControllerAI.State.IdleWander;
+        Vector2 randomPos = Random.insideUnitCircle * spawnRadius;
+        Vector3 spawnPos = transform.position + new Vector3(randomPos.x, 0, randomPos.y);
+        Quaternion randomRot = Quaternion.Euler(0, Random.Range(0, 360f), 0);
+
+        respawnedLemming.transform.position = spawnPos;
+        respawnedLemming.transform.rotation = randomRot;
+
+        respawnedLemming.InitLemming(this, lemmingMoveSpeed, TagsLemmingsHave, TagsLemmingsShouldReactTo, layersLemmingsIgnore);
+        idleLemmings.Add(respawnedLemming);
     }
 
     private void LemmingDestroyed(LemmingsControllerAI destroyedLemming)
     {
         destroyedLemming.OnDestroyEvent -= LemmingDestroyed;
+        destroyedLemming.OnRespawnEvent -= LemmingRespawned;
         spawnedLemmings.Remove(destroyedLemming);
 
         if (destroyedLemming.currentState == LemmingsControllerAI.State.IdleWander)
             idleLemmings.Remove(destroyedLemming);
 
         SpawnLemming();
+    }
+
+    private void LemmingRespawned(LemmingsControllerAI respawnedLemming)
+    {
+        RespawnLemming(respawnedLemming);
     }
 
     private void SpawnLemmings()

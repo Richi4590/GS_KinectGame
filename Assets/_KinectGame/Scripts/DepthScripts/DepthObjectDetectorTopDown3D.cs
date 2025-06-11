@@ -15,6 +15,7 @@ using System.IO;
 
 public class DepthObjectDetectorTopDown3D : MonoBehaviour
 {
+    [Header("Object References")]
     public static DepthObjectDetectorTopDown3D Instance;
     public ContourApproximationModes ContourAproximationMode;
     public bool DEBUG_DEPTH_TEX = false;
@@ -22,12 +23,14 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public string DEBUG_BINARY_IMAGE_PATH = "Assets/BinaryTest.png";
     public Camera _Camera;
     public GameObject DepthSourceManager;
-    public SerializedDictionaryIntGameObject TopDownObjectsPrefabs3DDict;
+    public SerializedDictionaryShapesEnumToGameObject TopDownObjectsPrefabs3DDict;
     public GameObject DebugObjectCenterPrefab;
     public MeshRenderer depthTextureVisualDestinationMesh;
     public Transform depthChildrenRootObject;
     public GameObject QRCodeVisualizer;
     public ObjectCreationMode currentMode = ObjectCreationMode.ReuseObjectAndUpdate;
+
+    [Header("Depth Settings")]
     [Min(0)] public int MinDepth = 500;
     [Min(0)] public int MaxDepth = 1000;
     [Min(0)] public int minBlobSize = 10;
@@ -40,8 +43,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     //[Min(0)] public int fixedSquareImageSizeArucoCode = 50;
 
     public LayerMask layersToIgnoreMeshUpdates;  
-    private Vector3 generatedMeshRotationOffset = Vector3.zero;
 
+    [Header("Object Settings")]
     public bool flipSpriteX = false;
     public bool flipSpriteY = false;
 
@@ -50,8 +53,14 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
     public float maxAllowedMovementRadius = 1f;
     public float collisionWallHeight = 5f;
+    public float objectFeatureRadiusMultiplier = 1.0f;
     public bool visualizeWithLines = true;
     public float lineWidth = 0.1f;
+
+    [Header("Shape Detection Settings")]
+    [Min(0)] public float angleToleranceDeviation = 10f;
+    [Min(0)] public float aspectTolerance = 0.3f;
+
     public int framesToWait = 10;
 
     private KinectSensor _Sensor;
@@ -96,7 +105,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         _OrthographicCamera = _Camera;
 
         if (TopDownObjectsPrefabs3DDict == null)
-            TopDownObjectsPrefabs3DDict = GetComponent<SerializedDictionaryIntGameObject>();
+            TopDownObjectsPrefabs3DDict = GetComponent<SerializedDictionaryShapesEnumToGameObject>();
 
         // Allocate OpenCV Mats only once
         _BinaryImage = new Mat(_DepthHeight, _DepthWidth, MatType.CV_8UC1);
@@ -280,6 +289,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         ApplyMaskTexture();
     }
 
+
     void ProcessDepthData(ushort[] depthData)
     {
         if (depthData == null) return;
@@ -411,14 +421,16 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 continue;
 
             // Convert to simplified 2D world contour
-            List<Vector2> contour2D = new List<Vector2>();
+            List<OpenCvSharp.Point> contour2D = new List<OpenCvSharp.Point>();
 
             for (int i = 0; i < contour.Length; i++)
             {
                 Vector3 pos = DepthToViewportMapped(new Vector2(contour[i].X, contour[i].Y));
-                contour2D.Add(new Vector2(pos.x, pos.z));
+                contour2D.Add(new OpenCvSharp.Point(pos.x, pos.z));
             }
-            Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
+
+            Point[] simplified = Cv2.ApproxPolyDP(contour2D, simplificationTolerance, true);
+            //Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
 
             if (simplified.Length < 3)
                 return;
@@ -429,9 +441,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             for (int i = 0; i < simplified.Length; i++)
             {
                 worldPoints3D[i] = new Vector3(
-                    simplified[i].x,
+                    simplified[i].X,
                     depthChildrenRootObject.transform.position.y,
-                    simplified[i].y
+                    simplified[i].Y
                 );
 
                 //worldPoints3D[i] = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
@@ -470,7 +482,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             {
                 //GameObject newlyScannedPrefab = TopDownObjectsPrefabs3DDict.dict[0];//GetGameObjectPrefabFromCameraContour(contour, center3D);
                 GameObject newlyScannedPrefab = GetGameObjectPrefabFromCameraContour(contour, center3D);
-
+                
                 closestObject.TryGetComponent<CustomTag>(out CustomTag t1);
                 newlyScannedPrefab.TryGetComponent<CustomTag>(out CustomTag t2);
 
@@ -495,6 +507,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 obj.transform.position = center3D;
                 trackedObjects[obj] = newCenter2D;
 
+                float longestObjectSide = Mathf.Max(size3D.x, size3D.y);
+                longestObjectSide = Mathf.Max(longestObjectSide, size3D.z) * 0.5f * objectFeatureRadiusMultiplier;
+                SerializedDictionaryShapesEnumToGameObject.SetObjectPrefabParameters(closestObject, longestObjectSide);
+
                 if (!_SpawnedObjects.Contains(obj))
                     _SpawnedObjects.Add(obj);
 
@@ -504,6 +520,10 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             else
             {
                 obj = InstantiateGameObjectFromCameraContour(contour, center3D);
+
+                float longestObjectSide = Mathf.Max(size3D.x, size3D.y);
+                longestObjectSide = Mathf.Max(longestObjectSide, size3D.z) * 0.5f * objectFeatureRadiusMultiplier;
+                SerializedDictionaryShapesEnumToGameObject.SetObjectPrefabParameters(obj, longestObjectSide);
 
                 if (obj != null) 
                 {
@@ -611,14 +631,48 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         GameObject obj = InstantiateFromArucoCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
         */
 
+        double peri = Cv2.ArcLength(contour, true);
+        Point[] approx = Cv2.ApproxPolyDP(contour, 0.02 * peri, true);
 
+        string shape = ClassifyShape(approx, contour, angleToleranceDeviation, aspectTolerance);
+        bool wasParsable = Enum.TryParse(shape, out ShapesEnum recognizedShape);
+        
+        GameObject obj = null;
 
-        GameObject obj = Instantiate(
-                    TopDownObjectsPrefabs3DDict.dict[0],
+        if (wasParsable)
+        {
+            //Debug.Log($"Detected shape: {recognizedShape.ToString()}, " + (int)recognizedShape);
+
+            if (!TopDownObjectsPrefabs3DDict.dict.ContainsKey(recognizedShape))
+            {
+                obj = Instantiate(
+                        TopDownObjectsPrefabs3DDict.dict[ShapesEnum.Default],
+                        center3D,
+                        Quaternion.identity,
+                        depthChildrenRootObject
+                        );
+            }
+            else
+            {
+                obj = Instantiate(
+                    TopDownObjectsPrefabs3DDict.dict[recognizedShape],
                     center3D,
                     Quaternion.identity,
                     depthChildrenRootObject
                     );
+            }
+        }
+        else
+        {
+            //Debug.Log($"Could not parse enum! Is there an enum entry missing? ({shape})");
+
+            obj = Instantiate(
+                TopDownObjectsPrefabs3DDict.dict[ShapesEnum.Default],
+                center3D,
+                Quaternion.identity,
+                depthChildrenRootObject
+                );
+        }
 
         obj.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
 
@@ -667,7 +721,26 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
         */
 
-        return TopDownObjectsPrefabs3DDict.dict[0];
+        double peri = Cv2.ArcLength(contour, true);
+        Point[] approx = Cv2.ApproxPolyDP(contour, 0.02 * peri, true);
+
+        string shape = ClassifyShape(approx, contour, angleToleranceDeviation, aspectTolerance);
+        bool wasParsable = Enum.TryParse(shape, out ShapesEnum recognizedShape);
+
+        if (wasParsable)
+        {
+            //Debug.Log($"Detected shape: {recognizedShape.ToString()}, " + (int)recognizedShape);
+
+            if (!TopDownObjectsPrefabs3DDict.dict.ContainsKey(recognizedShape))
+                return TopDownObjectsPrefabs3DDict.dict[ShapesEnum.Default];
+            else
+                return TopDownObjectsPrefabs3DDict.dict[recognizedShape];
+        }
+        else
+        {
+            //Debug.Log($"Could not parse enum! Is there an enum entry missing? ({shape})");
+            return TopDownObjectsPrefabs3DDict.dict[ShapesEnum.Default];
+        }
     }
 
     public Rect MapCenteredDepthRectToColorSpace(OpenCvSharp.Rect boundingRect,
@@ -856,17 +929,18 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             double area = Cv2.ContourArea(contour);
             if (area >= minBlobSize && area <= maxBlobSize)
             {
-                // Convert 2D contour positions to Vector2 for simplification
-                List<Vector2> contour2D = new List<Vector2>();
+                // Convert to simplified 2D world contour
+                List<OpenCvSharp.Point> contour2D = new List<OpenCvSharp.Point>();
 
                 for (int i = 0; i < contour.Length; i++)
                 {
                     Vector3 pos = DepthToViewportMapped(new Vector2(contour[i].X, contour[i].Y));
-                    contour2D.Add(new Vector2(pos.x, pos.z));
+                    contour2D.Add(new OpenCvSharp.Point(pos.x, pos.z));
                 }
 
-                Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
-
+                Point[] simplified = Cv2.ApproxPolyDP(contour2D, simplificationTolerance, true);
+                //Vector2[] simplified = SimplifyPolygon(contour2D.ToArray(), simplificationTolerance);
+                
                 if (simplified.Length < 3)
                     return;
 
@@ -876,9 +950,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 for (int i = 0; i < simplified.Length; i++)
                 {
                     worldPoints3D[i] = new Vector3(
-                        simplified[i].x,
+                        simplified[i].X,
                         depthChildrenRootObject.transform.position.y,
-                        simplified[i].y
+                        simplified[i].Y
                     );
 
                     //worldPoints3D[i] = DepthToViewport(new Vector2(contour[i].X, contour[i].Y));
@@ -908,9 +982,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 Vector3 center3D = minBounds + size3D / 2f;
                 objectBounds.Add(new Rect(minBounds.x, minBounds.z, size3D.x, size3D.z)); // Assuming x-z plane is top-down
                                                                                           //----------
+                float longestObjectSide = Mathf.Max(size3D.x, size3D.y);
+                longestObjectSide = Mathf.Max(longestObjectSide, size3D.z) * 0.5f * objectFeatureRadiusMultiplier;
 
                 // Instantiate object at calculated 3D center
                 GameObject obj = InstantiateGameObjectFromCameraContour(contour, center3D);
+
+                SerializedDictionaryShapesEnumToGameObject.SetObjectPrefabParameters(obj, longestObjectSide);
 
                 if (obj == null)
                     return;
@@ -1107,74 +1185,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         //lineRenderer.endColor = lineColor;
     }
 
-    public static Vector2[] SimplifyPolygon(Vector2[] points, float tolerance)
-    {
-        if (points.Length < 3) return points; // No need to simplify if less than 3 points
-        List<Vector2> simplified = RamerDouglasPeucker(points, tolerance);
-        return simplified.ToArray();
-    }
-
-    private static List<Vector2> RamerDouglasPeucker(Vector2[] points, float epsilon)
-    {
-        try
-        {
-            if (points.Length < 3) return new List<Vector2>(points);
-
-            int firstIndex = 0;
-            int lastIndex = points.Length - 1;
-            List<int> pointIndexesToKeep = new List<int> { firstIndex, lastIndex };
-
-            while (points[firstIndex] == points[lastIndex]) lastIndex--; // Avoid duplicates
-
-            Reduce(points, firstIndex, lastIndex, epsilon, pointIndexesToKeep);
-            pointIndexesToKeep.Sort();
-
-            List<Vector2> result = new List<Vector2>();
-            foreach (int index in pointIndexesToKeep)
-            {
-                result.Add(points[index]);
-            }
-            return result;
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e);
-        }
-
-        return new List<Vector2>(points);
-    }
-
-    private static void Reduce(Vector2[] points, int firstIndex, int lastIndex, float epsilon, List<int> pointIndexesToKeep)
-    {
-
-        float maxDistance = 0;
-        int index = firstIndex;
-
-        for (int i = firstIndex + 1; i < lastIndex; i++)
-        {
-            float distance = PerpendicularDistance(points[firstIndex], points[lastIndex], points[i]);
-            if (distance > maxDistance)
-            {
-                maxDistance = distance;
-                index = i;
-            }
-        }
-
-        if (maxDistance > epsilon)
-        {
-            pointIndexesToKeep.Add(index);
-            Reduce(points, firstIndex, index, epsilon, pointIndexesToKeep);
-            Reduce(points, index, lastIndex, epsilon, pointIndexesToKeep);
-        }
-    }
-
-    private static float PerpendicularDistance(Vector2 pointA, Vector2 pointB, Vector2 point)
-    {
-        float area = Mathf.Abs((pointA.x * (pointB.y - point.y) + pointB.x * (point.y - pointA.y) + point.x * (pointA.y - pointB.y)) * 0.5f);
-        float baseLength = (pointB - pointA).magnitude;
-        return (area * 2f) / baseLength;
-    }
-
     Vector3 DepthToViewport(Vector2 depthPos)
     {
         float x = (depthPos.x / _DepthWidth) * 2 - 1;
@@ -1220,6 +1230,80 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
 
         return _OrthographicCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, 0));
+    }
+
+    double GetAngle(Point a, Point b, Point c)
+    {
+        // Vectors: ba and bc
+        double abx = a.X - b.X;
+        double aby = a.Y - b.Y;
+        double cbx = c.X - b.X;
+        double cby = c.Y - b.Y;
+
+        double dot = abx * cbx + aby * cby;
+        double cross = abx * cby - aby * cbx;
+
+        double angle = Math.Atan2(Math.Abs(cross), dot); // Always positive angle
+        return angle * (180.0 / Math.PI); // Convert to degrees
+    }
+
+    string ClassifyShape(Point[] approx, Point[] fullContour, double angleToleranceDeviation = 10, double aspectTolerance = 0.2)
+    {
+        int vertices = approx.Length;
+        bool isConvex = Cv2.IsContourConvex(approx);
+
+        if (vertices == 3)
+            return "Triangle";
+
+        if (vertices == 4)
+        {
+            OpenCvSharp.Rect rect = Cv2.BoundingRect(approx);
+            float aspectRatio = (float)rect.Width / rect.Height;
+
+            double angle1 = GetAngle(approx[0], approx[1], approx[2]);
+            double angle2 = GetAngle(approx[1], approx[2], approx[3]);
+            double angle3 = GetAngle(approx[2], approx[3], approx[0]);
+            double angle4 = GetAngle(approx[3], approx[0], approx[1]);
+
+            bool allRight = IsApproximately(angle1, 90, angleToleranceDeviation) &&
+                            IsApproximately(angle2, 90, angleToleranceDeviation) &&
+                            IsApproximately(angle3, 90, angleToleranceDeviation) &&
+                            IsApproximately(angle4, 90, angleToleranceDeviation);
+
+            if (allRight)
+            {
+                return (aspectRatio > (1 - aspectTolerance) && aspectRatio < (1 + aspectTolerance))
+                    ? "Square"
+                    : "Rectangle";
+            }
+
+            bool oppAnglesEqual = IsApproximately(angle1, angle3, angleToleranceDeviation) &&
+                                  IsApproximately(angle2, angle4, angleToleranceDeviation);
+
+            if (oppAnglesEqual && !allRight)
+                return "Parallelogram";
+
+            return "Trapezoid";
+        }
+
+        if (!isConvex && vertices == 10)
+            return "Star";
+
+        if (vertices > 4)
+        {
+            double area = Cv2.ContourArea(approx);
+            double peri = Cv2.ArcLength(approx, true);
+            double circularity = 4 * Math.PI * area / (peri * peri);
+            if (circularity > 0.8)
+                return "Circle";
+        }
+
+        return "Default";
+    }
+
+    bool IsApproximately(double a, double b, double tolerance)
+    {
+        return Math.Abs(a - b) < tolerance;
     }
 
     private void ClearSpawnedObjects()

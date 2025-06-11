@@ -159,6 +159,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Tags:
+  - Default
   - Bridge
 --- !u!33 &7385383793465189577
 MeshFilter:

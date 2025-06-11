@@ -51,13 +51,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterPrefab: {fileID: 813640711333535547, guid: f7ef4279fe3ab0447a5032aef26cb248,
     type: 3}
+  TagsLemmingsHave:
+  - Lemming
+  TagsLemmingsShouldReactTo:
+  - Reflector
+  layersLemmingsIgnore:
+    serializedVersion: 2
+    m_Bits: 12480
+  lemmingMoveSpeed: 25
   characterCount: 10
   spawnRadius: 8
-  delayBetweenMarches: 2
+  delayBetweenMarches: 1.5
   lemmingsSpawnRoot: {fileID: 3916936310813223643}
   exitPoint: {fileID: 8161329104007167573}
   exitDirection: {x: 0, y: 1}
-  _startMarching: 0
+  spawnedLemmings: []
+  idleLemmings: []
+  _startMarching: 1
 --- !u!1 &7651589538761160976
 GameObject:
   m_ObjectHideFlags: 0

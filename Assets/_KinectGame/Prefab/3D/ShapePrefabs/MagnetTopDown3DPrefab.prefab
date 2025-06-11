@@ -160,7 +160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Tags:
-  - 
+  - Magnet
 --- !u!114 &3691404429211267427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -348,15 +348,15 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0, g: 1, b: 0.8893428, a: 1}
-      key1: {r: 0.21893275, g: 0.78106725, b: 0.6946365, a: 1}
+      key0: {r: 0.91039276, g: 0, b: 1, a: 1}
+      key1: {r: 0.91039276, g: 0, b: 1, a: 1}
       key2: {r: 1, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
       key5: {r: 0, g: 0, b: 0, a: 0}
       key6: {r: 0, g: 0, b: 0, a: 0}
       key7: {r: 0, g: 0, b: 0, a: 0}
-      ctime0: 193
+      ctime0: 0
       ctime1: 65535
       ctime2: 64957
       ctime3: 0
