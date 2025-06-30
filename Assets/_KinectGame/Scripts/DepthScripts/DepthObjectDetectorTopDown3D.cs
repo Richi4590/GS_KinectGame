@@ -20,7 +20,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public ContourApproximationModes ContourAproximationMode;
     public bool DEBUG_DEPTH_TEX = false;
     public bool DEBUG_CREATE_VISUAL_TEX = false;
-    public string DEBUG_BINARY_IMAGE_PATH = "Assets/BinaryTest.png";
+    public string DEBUG_BINARY_IMAGE_PATH = "BinaryTest";
     public Camera _Camera;
     public GameObject DepthSourceManager;
     public SerializedDictionaryShapesEnumToGameObject TopDownObjectsPrefabs3DDict;
@@ -42,6 +42,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Range(0, 100)] public int borderThickness = 0;
     [Min(0)] public float viewPortXOffset = 0.0f;
     [Min(0)] public float simplificationTolerance = 0.02f;
+    [Min(0)] public float gaussianBlurAmount = 0;
     //[Min(0)] public int fixedSquareImageSizeArucoCode = 50;
 
     public LayerMask layersToIgnoreMeshUpdates;  
@@ -60,8 +61,30 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public float lineWidth = 0.1f;
 
     [Header("Shape Detection Settings")]
-    [Min(0)] public float angleToleranceDeviation = 10f;
-    [Min(0)] public float aspectTolerance = 0.3f;
+    [Header("Basic Shape Thresholds")]
+    [Min(0)] public double circularityThreshold = 0.75;
+    [Min(0)] public double solidityMinForBasicShapes = 0.9;
+
+    [Header("Star Shape Detection")]
+    [Min(0)] public double solidityStarThreshold = 0.85;
+
+    [Header("Rectangle & Square Detection")]
+    [Min(0)] public double squareAspectMin = 0.85;
+    [Min(0)] public double squareAspectMax = 1.15;
+    [Min(0)] public double extentRectMin = 0.65;
+    [Min(0)] public double extentSquareMin = 0.75;
+
+    [Header("Triangle Detection")]
+    [Min(0)] public double extentTriangleMin = 0.5;
+    [Min(0)] public double extentTriangleMax = 0.75;
+
+    [Header("Hu Moment Settings")]
+    [Min(0)] public bool useHuMoments = false;
+    [Min(0)] public double huCircleThreshold = 0.3; // Optional: lower = more circular
+    [Min(0)] public double huStarThreshold = 0.25;  // Optional: higher = more "star"-like
+
+    [Header("Contour Area Filtering")]
+    [Min(0)] public double minContourArea = 100;    // Ignore tiny noisy shapes
 
     public int framesToWait = 10;
     public bool SaveBinaryImage = false;
@@ -210,6 +233,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                     // Copy to Mat
                     _BinaryImage.SetArray(0, 0, grayscalePixels);
 
+                    if (gaussianBlurAmount > 0)
+                    {
+                        int intVal = (int)Math.Ceiling(gaussianBlurAmount);
+                        int oddBlurAmount = (intVal % 2 == 0) ? intVal + 1 : intVal;
+
+                        Cv2.GaussianBlur(_BinaryImage, _BinaryImage, new Size(oddBlurAmount, oddBlurAmount), 1); // Optional
+                    }
                     depthTextureVisualDestinationMesh.material.mainTexture = _BinaryMaskTexture;
                 }
 
@@ -218,7 +248,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
             if (SaveBinaryImage)
             {
                 SaveBinaryImage = false;
-                SaveToStreamingAssets(_BinaryImage, "binary_mask_" + DateTime.Now.Second + ".png");
+                SaveToResources(_BinaryImage, "binary_mask_" + DateTime.Now.Minute + "_" + DateTime.Now.Second + ".png");
             }
             //InstantiateObjectsFromBounds(objectBounds);
 
@@ -326,6 +356,9 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         // Remove edge-connected components
         RemoveEdgeArtifacts(ref _BinaryImage);
+
+        if (gaussianBlurAmount > 0)
+            Cv2.GaussianBlur(_BinaryImage, _BinaryImage, new Size(gaussianBlurAmount, gaussianBlurAmount), 1); // Optional
 
         ApplyMaskTexture();
     }
@@ -645,7 +678,18 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         GameObject obj = InstantiateFromArucoCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
         */
 
-        string shape = ClassifyShape(contour, angleToleranceDeviation, aspectTolerance);
+        string shape = ClassifyShape(
+                                    contour,
+                                    circularityThreshold,
+                                    solidityStarThreshold,
+                                    extentTriangleMin,
+                                    extentTriangleMax,
+                                    squareAspectMin,
+                                    squareAspectMax,
+                                    extentRectMin,
+                                    extentSquareMin,
+                                    solidityMinForBasicShapes
+                                );
         bool wasParsable = Enum.TryParse(shape, out ShapesEnum recognizedShape);
         
         GameObject obj = null;
@@ -734,7 +778,18 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
         */
 
-        string shape = ClassifyShape(contour, angleToleranceDeviation, aspectTolerance);
+        string shape = ClassifyShape(
+                                    contour,
+                                    circularityThreshold,
+                                    solidityStarThreshold,
+                                    extentTriangleMin,
+                                    extentTriangleMax,
+                                    squareAspectMin,
+                                    squareAspectMax,
+                                    extentRectMin,
+                                    extentSquareMin,
+                                    solidityMinForBasicShapes
+                                );
         bool wasParsable = Enum.TryParse(shape, out ShapesEnum recognizedShape);
 
         if (wasParsable)
@@ -1381,48 +1436,182 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         return "Default";
     }
 
-    string ClassifyShape(Point[] fullContour, double angleTolerance = 20, double aspectTolerance = 0.4)
+    /*
+    public string ClassifyShape_V2(Point[] contour, double angleDeviation = 15, double circularityThreshold = 0.75)
     {
-        if (fullContour.Length < 5)
-            return "Default";  // too little info
+        if (contour.Length < 5) return "Default";
 
-        bool isConvex = Cv2.IsContourConvex(fullContour);
-        double area = Cv2.ContourArea(fullContour);
-        double perimeter = Cv2.ArcLength(fullContour, true);
-
-        // Circularity helps with circles, even low-res
+        // 1. Circularity test
+        double area = Cv2.ContourArea(contour);
+        double perimeter = Cv2.ArcLength(contour, true);
         double circularity = 4 * Math.PI * area / (perimeter * perimeter);
-        if (circularity > 0.7)
+        if (circularity > circularityThreshold)
             return "Circle";
 
-       // if (!isConvex)
-            //return "Star";
+        // 2. Bounding box for square/rectangle test
+        var rect = Cv2.BoundingRect(contour);
+        float aspectRatio = (float)rect.Width / rect.Height;
 
-        var angles = GetAllInteriorAngles(fullContour);
-        double avgAngle = angles.Average();
-        double angleVariance = angles.Select(a => Math.Pow(a - avgAngle, 2)).Average();
-
-        var rect = Cv2.BoundingRect(fullContour);
-        double aspectRatio = (double)rect.Width / rect.Height;
-
-        if (IsApproximately(avgAngle, 90, angleTolerance))
-        {
-            if (Math.Abs(aspectRatio - 1.0) < aspectTolerance)
-                return "Square";
-            else
-                return "Rectangle";
-        }
-
-        if (IsApproximately(avgAngle, 60, angleTolerance))
+        // 3. Triangle/Trapezoid via angle distribution (fallback, rough)
+        int triangleLike = CountTrueCornerAngles(contour, minAngleDistribution, maxAngleDistribution, sharpnessThresholdDeg);
+        if (triangleLike >= 3)
             return "Triangle";
 
-        if (angleVariance < 150 && aspectRatio > 0.5 && aspectRatio < 2.0)
-            return "Parallelogram";
+        //4. Rectangle/Square
+        if (aspectRatio > 0.85f && aspectRatio < 1.15f)
+            return "Square";
+        if (aspectRatio > 1.15f || aspectRatio < 0.85f)
+            return "Rectangle";
 
-        if (angleVariance < 300)
-            return "Trapezoid";
+        // 3. Sharp angles for star-like shapes
+        int sharpCorners = CountSharpCorners(contour, angleDeviation);
+        if (sharpCorners >= 8 && sharpCorners <= 12)
+            return "Star";
 
         return "Default";
+    }
+    */
+
+    public string ClassifyShape(
+        Point[] contour,
+        double circularityThreshold = 0.75,
+        double solidityStarThreshold = 0.85,
+        double extentTriangleMin = 0.5,
+        double extentTriangleMax = 0.75,
+        double squareAspectMin = 0.85,
+        double squareAspectMax = 1.15,
+        double extentRectMin = 0.65,
+        double extentSquareMin = 0.75,
+        double solidityMinForBasicShapes = 0.9
+    )
+    {
+        if (contour.Length < 5)
+            return "Default";
+
+        // === Region Properties ===
+        double area = Cv2.ContourArea(contour);
+        double perimeter = Cv2.ArcLength(contour, true);
+        if (area <= 0 || perimeter <= 0)
+            return "Default";
+
+        double circularity = 4 * Math.PI * area / (perimeter * perimeter);
+
+        var rect = Cv2.BoundingRect(contour);
+        double aspectRatio = (double)rect.Width / rect.Height;
+        double extent = area / (rect.Width * rect.Height);
+
+        Point[] hull = Cv2.ConvexHull(contour);
+        double hullArea = Cv2.ContourArea(hull);
+        double solidity = area / hullArea;
+
+        double[] huLog = null;
+        if (useHuMoments)
+        {
+            var moments = Cv2.Moments(contour);
+            var hu = ComputeHuMoments(moments);
+            huLog = hu.Select(h => -1 * Math.Sign(h) * Math.Log10(Math.Abs(h) + 1e-30)).ToArray();
+        }
+
+        // === Classification Logic ===
+
+        if (circularity > circularityThreshold && solidity > solidityMinForBasicShapes)
+            return "Circle";
+
+        if (extent > extentSquareMin && aspectRatio >= squareAspectMin && aspectRatio <= squareAspectMax && solidity > solidityMinForBasicShapes)
+            return "Square";
+
+        if (extent > extentRectMin && solidity > solidityMinForBasicShapes &&
+            (aspectRatio < squareAspectMin || aspectRatio > squareAspectMax))
+            return "Rectangle";
+
+        //if (solidity < solidityStarThreshold && extent < extentTriangleMin)
+            //return "Star";
+
+        if (solidity > solidityMinForBasicShapes && extent >= extentTriangleMin && extent <= extentTriangleMax)
+            return "Triangle";
+
+        return "Default";
+    }
+
+    public static double[] ComputeHuMoments(Moments m)
+    {
+        double n20 = m.Nu20;
+        double n02 = m.Nu02;
+        double n11 = m.Nu11;
+        double n30 = m.Nu30;
+        double n12 = m.Nu12;
+        double n21 = m.Nu21;
+        double n03 = m.Nu03;
+
+        double[] hu = new double[7];
+
+        hu[0] = n20 + n02;
+        hu[1] = Math.Pow(n20 - n02, 2) + 4 * Math.Pow(n11, 2);
+        hu[2] = Math.Pow(n30 - 3 * n12, 2) + Math.Pow(3 * n21 - n03, 2);
+        hu[3] = Math.Pow(n30 + n12, 2) + Math.Pow(n21 + n03, 2);
+        hu[4] = (n30 - 3 * n12) * (n30 + n12) * (Math.Pow(n30 + n12, 2) - 3 * Math.Pow(n21 + n03, 2)) +
+                (3 * n21 - n03) * (n21 + n03) * (3 * Math.Pow(n30 + n12, 2) - Math.Pow(n21 + n03, 2));
+        hu[5] = (n20 - n02) * (Math.Pow(n30 + n12, 2) - Math.Pow(n21 + n03, 2)) +
+                4 * n11 * (n30 + n12) * (n21 + n03);
+        hu[6] = (3 * n21 - n03) * (n30 + n12) * (Math.Pow(n30 + n12, 2) - 3 * Math.Pow(n21 + n03, 2)) -
+                (n30 - 3 * n12) * (n21 + n03) * (3 * Math.Pow(n30 + n12, 2) - Math.Pow(n21 + n03, 2));
+
+        return hu;
+    }
+
+    int CountSharpCorners(Point[] contour, double thresholdDeg)
+    {
+        int sharp = 0;
+        for (int i = 0; i < contour.Length; i++)
+        {
+            Point a = contour[(i - 1 + contour.Length) % contour.Length];
+            Point b = contour[i];
+            Point c = contour[(i + 1) % contour.Length];
+
+            double angle = GetAngleDeg(a, b, c);
+            if (angle < thresholdDeg) sharp++;
+        }
+        return sharp;
+    }
+
+    int CountTrueCornerAngles(Point[] contour, double minDeg, double maxDeg, double sharpnessThresholdDeg = 25)
+    {
+        int count = 0;
+        List<double> sharpAngles = new List<double>();
+
+        int len = contour.Length;
+        for (int i = 0; i < len; i++)
+        {
+            Point a = contour[(i - 1 + len) % len];
+            Point b = contour[i];
+            Point c = contour[(i + 1) % len];
+
+            double angle = GetAngleDeg(a, b, c);
+
+            // Check if this point is a "corner" (sharp change from 180°)
+            double deviationFromFlat = Math.Abs(180 - angle);
+            if (deviationFromFlat > sharpnessThresholdDeg)
+            {
+                if (angle >= minDeg && angle <= maxDeg)
+                {
+                    count++;
+                }
+                sharpAngles.Add(angle); // For debugging or visualization
+            }
+        }
+
+        return count;
+    }
+
+    double GetAngleDeg(Point a, Point b, Point c)
+    {
+        var ab = new Point2f(a.X - b.X, a.Y - b.Y);
+        var cb = new Point2f(c.X - b.X, c.Y - b.Y);
+
+        double dot = ab.X * cb.X + ab.Y * cb.Y;
+        double cross = ab.X * cb.Y - ab.Y * cb.X;
+
+        return Math.Abs(Math.Atan2(cross, dot) * (180.0 / Math.PI));
     }
 
     private void ClearSpawnedObjects()
@@ -1444,12 +1633,12 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         if (_Centroids != null) _Centroids.Dispose();
     }
 
-    public static void SaveToStreamingAssets(Mat binaryMask, string filename = "binary_mask.jpg")
+    public static void SaveToResources(Mat binaryMask, string filename = "binary_mask.jpg")
     {
         Mat converted = new Mat();
 
         // Get StreamingAssets path
-        string folderPath = Path.Combine(Application.dataPath, "StreamingAssets");
+        string folderPath = Path.Combine(Application.dataPath, "Resources");
 
         // Make sure folder exists
         if (!Directory.Exists(folderPath))
