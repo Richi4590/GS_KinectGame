@@ -37,6 +37,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public int maxBlobSize = 600;
     [Min(0)] public int dilationIterations = 2;
     [Min(0)] public int erosionIterations = 2;
+    [Min(1)] public int morhologicalSpecRemoval = 1;
+    public float epsilonShapeRecognition = 0.005f;
     [Range(0, 100)] public int borderThickness = 0;
     [Min(0)] public float viewPortXOffset = 0.0f;
     [Min(0)] public float simplificationTolerance = 0.02f;
@@ -62,6 +64,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public float aspectTolerance = 0.3f;
 
     public int framesToWait = 10;
+    public bool SaveBinaryImage = false;
 
     private KinectSensor _Sensor;
     private DepthSourceManager _DepthManager;
@@ -212,6 +215,11 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
             }
             
+            if (SaveBinaryImage)
+            {
+                SaveBinaryImage = false;
+                SaveToStreamingAssets(_BinaryImage, "binary_mask_" + DateTime.Now.Second + ".png");
+            }
             //InstantiateObjectsFromBounds(objectBounds);
 
 
@@ -384,7 +392,13 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
 
         Cv2.FloodFill(modifiedMask, new Point(0, 0), Scalar.Black);
-        
+
+        // Optional smoothing to help with rough masks
+        //Cv2.GaussianBlur(modifiedMask, modifiedMask, new Size(5, 5), 0);
+
+        // Remove small specks
+        Cv2.MorphologyEx(modifiedMask, modifiedMask, MorphTypes.Open, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(morhologicalSpecRemoval, morhologicalSpecRemoval)));
+
         if (!DEBUG_FloodFill_Mask)
             // Crop the image back to original size (remove the added border)
             binaryImage = modifiedMask;
@@ -631,10 +645,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         GameObject obj = InstantiateFromArucoCode(camSegment, center3D, Quaternion.identity, depthTextureVisualDestinationMesh.transform);
         */
 
-        double peri = Cv2.ArcLength(contour, true);
-        Point[] approx = Cv2.ApproxPolyDP(contour, 0.02 * peri, true);
-
-        string shape = ClassifyShape(approx, contour, angleToleranceDeviation, aspectTolerance);
+        string shape = ClassifyShape(contour, angleToleranceDeviation, aspectTolerance);
         bool wasParsable = Enum.TryParse(shape, out ShapesEnum recognizedShape);
         
         GameObject obj = null;
@@ -672,6 +683,8 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
                 Quaternion.identity,
                 depthChildrenRootObject
                 );
+
+            //Debug.Log(null);
         }
 
         obj.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
@@ -721,10 +734,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         }
         */
 
-        double peri = Cv2.ArcLength(contour, true);
-        Point[] approx = Cv2.ApproxPolyDP(contour, 0.02 * peri, true);
-
-        string shape = ClassifyShape(approx, contour, angleToleranceDeviation, aspectTolerance);
+        string shape = ClassifyShape(contour, angleToleranceDeviation, aspectTolerance);
         bool wasParsable = Enum.TryParse(shape, out ShapesEnum recognizedShape);
 
         if (wasParsable)
@@ -777,6 +787,57 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         colorY = Mathf.Clamp(colorY, 0, colorHeight - fixedSize);
 
         return new Rect(colorX, colorY, fixedSize, fixedSize);
+    }
+
+    Point[] UpsampleContour(Point[] contour, int targetPoints = 64)
+    {
+        if (contour.Length < 2)
+            return contour;
+
+        // Step 1: Calculate segment lengths and total length
+        List<double> segmentLengths = new List<double>();
+        double totalLength = 0;
+
+        for (int i = 0; i < contour.Length; i++)
+        {
+            Point p1 = contour[i];
+            Point p2 = contour[(i + 1) % contour.Length]; // Loop back to start
+            double segLen = Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2));
+            segmentLengths.Add(segLen);
+            totalLength += segLen;
+        }
+
+        // Step 2: Interpolate targetPoints evenly along the full length
+        List<Point> upsampled = new List<Point>();
+        double step = totalLength / targetPoints;
+        double distAlong = 0;
+        int segIndex = 0;
+        double segOffset = 0;
+
+        for (int i = 0; i < targetPoints; i++)
+        {
+            while (segIndex < segmentLengths.Count && segOffset + segmentLengths[segIndex] < distAlong)
+            {
+                segOffset += segmentLengths[segIndex];
+                segIndex++;
+            }
+
+            if (segIndex >= contour.Length)
+                break;
+
+            Point p1 = contour[segIndex];
+            Point p2 = contour[(segIndex + 1) % contour.Length];
+            double segLen = segmentLengths[segIndex];
+            double t = (segLen == 0) ? 0 : (distAlong - segOffset) / segLen;
+
+            int x = (int)Math.Round(p1.X + t * (p2.X - p1.X));
+            int y = (int)Math.Round(p1.Y + t * (p2.Y - p1.Y));
+            upsampled.Add(new Point(x, y));
+
+            distAlong += step;
+        }
+
+        return upsampled.ToArray();
     }
 
     public Rect MapDepthRectToColorSpace(OpenCvSharp.Rect depthRect, CoordinateMapper coordMapper, ushort[] depthData, int depthWidth)
@@ -1247,7 +1308,26 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         return angle * (180.0 / Math.PI); // Convert to degrees
     }
 
-    string ClassifyShape(Point[] approx, Point[] fullContour, double angleToleranceDeviation = 10, double aspectTolerance = 0.2)
+    bool IsApproximately(double a, double b, double tolerance)
+    {
+        return Math.Abs(a - b) < tolerance;
+    }
+
+    List<double> GetAllInteriorAngles(Point[] contour)
+    {
+        List<double> angles = new();
+        int n = contour.Length;
+        for (int i = 0; i < n; i++)
+        {
+            Point a = contour[(i - 1 + n) % n];
+            Point b = contour[i];
+            Point c = contour[(i + 1) % n];
+            angles.Add(GetAngle(a, b, c));
+        }
+        return angles;
+    }
+
+    string ClassifyShape_OLD(Point[] approx, Point[] fullContour, double angleToleranceDeviation = 10, double aspectTolerance = 0.2)
     {
         int vertices = approx.Length;
         bool isConvex = Cv2.IsContourConvex(approx);
@@ -1301,9 +1381,48 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         return "Default";
     }
 
-    bool IsApproximately(double a, double b, double tolerance)
+    string ClassifyShape(Point[] fullContour, double angleTolerance = 20, double aspectTolerance = 0.4)
     {
-        return Math.Abs(a - b) < tolerance;
+        if (fullContour.Length < 5)
+            return "Default";  // too little info
+
+        bool isConvex = Cv2.IsContourConvex(fullContour);
+        double area = Cv2.ContourArea(fullContour);
+        double perimeter = Cv2.ArcLength(fullContour, true);
+
+        // Circularity helps with circles, even low-res
+        double circularity = 4 * Math.PI * area / (perimeter * perimeter);
+        if (circularity > 0.7)
+            return "Circle";
+
+       // if (!isConvex)
+            //return "Star";
+
+        var angles = GetAllInteriorAngles(fullContour);
+        double avgAngle = angles.Average();
+        double angleVariance = angles.Select(a => Math.Pow(a - avgAngle, 2)).Average();
+
+        var rect = Cv2.BoundingRect(fullContour);
+        double aspectRatio = (double)rect.Width / rect.Height;
+
+        if (IsApproximately(avgAngle, 90, angleTolerance))
+        {
+            if (Math.Abs(aspectRatio - 1.0) < aspectTolerance)
+                return "Square";
+            else
+                return "Rectangle";
+        }
+
+        if (IsApproximately(avgAngle, 60, angleTolerance))
+            return "Triangle";
+
+        if (angleVariance < 150 && aspectRatio > 0.5 && aspectRatio < 2.0)
+            return "Parallelogram";
+
+        if (angleVariance < 300)
+            return "Trapezoid";
+
+        return "Default";
     }
 
     private void ClearSpawnedObjects()
@@ -1323,5 +1442,38 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         if (_Labels != null) _Labels.Dispose();
         if (_Stats != null) _Stats.Dispose();
         if (_Centroids != null) _Centroids.Dispose();
+    }
+
+    public static void SaveToStreamingAssets(Mat binaryMask, string filename = "binary_mask.jpg")
+    {
+        Mat converted = new Mat();
+
+        // Get StreamingAssets path
+        string folderPath = Path.Combine(Application.dataPath, "StreamingAssets");
+
+        // Make sure folder exists
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+
+        // Full file path
+        string filePath = Path.Combine(folderPath, filename);
+
+        Texture2D TextureFromMat(Mat mat)
+        {
+            Texture2D texture = new Texture2D(mat.Width, mat.Height, TextureFormat.R8, false);
+            texture.LoadRawTextureData(mat.Data, mat.Width * mat.Height);
+            texture.Apply();
+            return texture;
+        }
+
+        // Then save
+        Texture2D tex = TextureFromMat(binaryMask);
+        byte[] bytes = tex.EncodeToPNG();
+        File.WriteAllBytes(filePath, bytes);
+
+
+
     }
 }

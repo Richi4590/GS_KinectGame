@@ -18,7 +18,6 @@ public class LemmingsMarchManager : MonoBehaviour
     public float delayBetweenMarches = 1f;
     public Transform lemmingsSpawnRoot;
     public Transform exitPoint;
-    public Vector2 exitDirection;
     public bool destroyLemmingsIfRespawns = false;
 
 
@@ -80,7 +79,8 @@ public class LemmingsMarchManager : MonoBehaviour
     {
         yield return null;
 
-        Vector3 flatDirection = new Vector3(exitDirection.x, 0, exitDirection.y).normalized;
+        Vector3 flatDirection = exitPoint.forward.normalized;
+        flatDirection.y = 0; // Flatten it to the XZ plane
 
         while (true)
         {
@@ -124,7 +124,7 @@ public class LemmingsMarchManager : MonoBehaviour
 
     public void RespawnLemming(LemmingsControllerAI respawnedLemming)
     {
-        respawnedLemming.currentState = LemmingsControllerAI.State.IdleWander;
+        respawnedLemming.ChangeState(LemmingsControllerAI.State.IdleWander);
         Vector2 randomPos = Random.insideUnitCircle * spawnRadius;
         Vector3 spawnPos = transform.position + new Vector3(randomPos.x, 0, randomPos.y);
         Quaternion randomRot = Quaternion.Euler(0, Random.Range(0, 360f), 0);
@@ -251,7 +251,9 @@ public class LemmingsMarchManager : MonoBehaviour
         // Draw exit direction arrow
         Gizmos.color = Color.red;
 
-        Vector3 dir = new Vector3(exitDirection.x, 0, exitDirection.y).normalized;
+        Vector3 dir = exitPoint.forward.normalized;
+        dir.y = 0; // Flatten it to the XZ plane
+
         if (dir.sqrMagnitude > 0.001f)
         {
             Vector3 start = exitPoint.position;

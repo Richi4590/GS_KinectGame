@@ -26,8 +26,13 @@ public class FallingInPitBridge3D : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        Matrix4x4 originalMatrix = Gizmos.matrix;
         Gizmos.color = gizmoColor;
-        Gizmos.DrawCube(transform.position, new Vector3(gameObject.transform.localScale.x, gameObject.transform.localScale.y, gameObject.transform.localScale.z));
+
+        Matrix4x4 rotationMatrix = Matrix4x4.TRS(gameObject.transform.position, transform.rotation, transform.lossyScale);
+        Gizmos.matrix = rotationMatrix;
+        Gizmos.DrawCube(Vector3.zero, Vector3.one);
+        Gizmos.matrix = originalMatrix;
     }
 
     private void OnTriggerEnter(Collider collision)
@@ -46,14 +51,6 @@ public class FallingInPitBridge3D : MonoBehaviour
                 meshColl.isTrigger = true;
 
                 bridgePlaced = true;
-            }
-        }
-
-        if (!bridgePlaced)
-        {
-            if (collision.gameObject.CompareTag("Player"))
-            {
-                BezierWalkerWithSpeed.Instance.ResetToLastCheckpoint();
             }
         }
     }

@@ -8,6 +8,7 @@ TagManager:
   - LastPosition
   - Red
   - Laser
+  - Ground
   layers:
   - Default
   - TransparentFX

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -8,14 +9,20 @@ public class LemmingsControllerAI : MonoBehaviour
 {
     public enum State { IdleWander, Marching }
     public State currentState = State.IdleWander;
-
+    
     public float wanderRadius = 5f;
     public float moveSpeed = 2f;
+
+    public Animator animator;
+    public GameObject keyVisualized;
+    public GameObject keyGameObject = null;
+
     public event UnityAction<LemmingsControllerAI> OnDestroyEvent;
     public event UnityAction<LemmingsControllerAI> OnRespawnEvent;
 
     public bool LemmingInitialized {get => lemmingInitialized;}
 
+    private State prevState = State.IdleWander;
     private List<string> TagsLemmingsHave = new List<string>();
     private List<string> TagsLemmingsShouldReactTo = new List<string>();
     private LayerMask layersLemmingsIgnore;
@@ -44,6 +51,7 @@ public class LemmingsControllerAI : MonoBehaviour
     {
         initialMoveSpeed = moveSpeed;
         spawnCenter = transform.position;
+        ChangeState(State.IdleWander);
         Wander();
     }
 
@@ -66,7 +74,7 @@ public class LemmingsControllerAI : MonoBehaviour
 
         if (!collision.gameObject.TryGetComponent<CustomTag>(out CustomTag t))
         {
-            DestroyLemming();
+            Reflect(collision);
             return;
         }
 
@@ -74,9 +82,64 @@ public class LemmingsControllerAI : MonoBehaviour
         {
             if (TagsLemmingsShouldReactTo.Contains(customTagEntry))
             {
-                //Reflect!
-                Reflect(collision);
+                if (t.Tags.Contains("Key"))
+                {
+                    keyGameObject = collision.gameObject;   
+                    keyGameObject.SetActive(false);
+                    keyVisualized.SetActive(true);
+                    break;
+                }
+
+                if (t.Tags.Contains("Reflector") || collision.gameObject.tag == "Untagged")
+                {
+                    //Reflect!
+                    Reflect(collision);
+                }
             }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if ((layersLemmingsIgnore & (1 << other.gameObject.layer)) != 0)
+            return;
+
+        if (!other.gameObject.TryGetComponent<CustomTag>(out CustomTag t))
+            return;
+
+        foreach (string customTagEntry in t.Tags)
+        {
+            if (TagsLemmingsShouldReactTo.Contains(customTagEntry))
+            {
+
+                if (t.Tags.Contains("KeyHole"))
+                {
+                    if (keyGameObject != null)
+                    {
+                        other.gameObject.GetComponent<Animator>().SetBool("isOpen", true);
+                        keyVisualized.SetActive(false);
+                        Destroy(keyGameObject);
+                    }
+                }
+            }
+        }
+    }
+
+    public void ChangeState (State newState)
+    {
+        currentState = newState;
+
+        if (currentState == State.IdleWander)
+        {
+            animator.SetInteger("State", 1);
+        }
+        else
+        {
+            animator.SetInteger("State", 2);
         }
     }
 
@@ -161,6 +224,16 @@ public class LemmingsControllerAI : MonoBehaviour
 
     public void DestroyLemming()
     {
+        if (keyGameObject != null)
+        {
+            keyGameObject.SetActive(true);
+            keyVisualized.SetActive(false);
+
+            Vector2 lastValidPosition = gameObject.GetComponent<LastValidPosition>().GetMostRecentValidPosition();
+            keyGameObject.transform.position = new Vector3(lastValidPosition.x, keyGameObject.transform.position.y, lastValidPosition.y);
+            transform.position = manager.transform.position;
+        }
+
         if (manager.destroyLemmingsIfRespawns)
         {
             if (OnDestroyEvent != null)

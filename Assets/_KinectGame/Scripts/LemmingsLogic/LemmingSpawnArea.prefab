@@ -30,7 +30,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3916936310813223643}
   - {fileID: 8161329104007167573}
   - {fileID: 1401620817400026615}
   - {fileID: 8756598383452373319}
@@ -49,12 +48,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18f33e970187fa94dbb88d83d5d48d42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterPrefab: {fileID: 813640711333535547, guid: f7ef4279fe3ab0447a5032aef26cb248,
+  characterPrefab: {fileID: 701872001004785438, guid: c2d95fe562121ec4eae2d5f9e77da9c5,
     type: 3}
   TagsLemmingsHave:
   - Lemming
   TagsLemmingsShouldReactTo:
   - Reflector
+  - Key
+  - KeyHole
   layersLemmingsIgnore:
     serializedVersion: 2
     m_Bits: 12480
@@ -62,43 +63,12 @@ MonoBehaviour:
   characterCount: 10
   spawnRadius: 8
   delayBetweenMarches: 1.5
-  lemmingsSpawnRoot: {fileID: 3916936310813223643}
+  lemmingsSpawnRoot: {fileID: 0}
   exitPoint: {fileID: 8161329104007167573}
-  exitDirection: {x: 0, y: 1}
+  destroyLemmingsIfRespawns: 0
   spawnedLemmings: []
   idleLemmings: []
   _startMarching: 1
---- !u!1 &7651589538761160976
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3916936310813223643}
-  m_Layer: 0
-  m_Name: LemmingsRoot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3916936310813223643
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7651589538761160976}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7711941042493427029}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8116129217117668152
 GameObject:
   m_ObjectHideFlags: 0

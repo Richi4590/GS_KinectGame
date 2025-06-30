@@ -101,7 +101,7 @@ public class TriggerEventsFallingBridge : MonoBehaviour
             // Wait a short moment
             yield return new WaitForSeconds(0.5f);
 
-            obj.transform.position = obj.GetComponent<LastValidPosition>().GetLastValidPosition();
+            obj.transform.position = obj.GetComponent<LastValidPosition>().GetMostRecentValidPosition();
             // Reset the scale back to original
             obj.localScale = originalScale;
             obj.gameObject.GetComponent<IndieMarc.TopDown.PlayerControls>().canMove = true;
