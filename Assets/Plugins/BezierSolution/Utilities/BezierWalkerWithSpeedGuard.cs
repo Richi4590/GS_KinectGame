@@ -127,13 +127,28 @@ namespace BezierSolution
             }
         }
 
-        public override void Execute(float deltaTime)
+        public override void Execute(float deltaTime) 
         {
             Vector3 newPos = spline.MoveAlongSpline(ref m_normalizedT, (isGoingForward ? speed : -speed) * deltaTime);
 
             transform.position = new Vector3(newPos.x, transform.position.y, newPos.z);
             RotateTarget(transform, m_normalizedT, lookAt, rotationLerpModifier * deltaTime);
             PostProcessMovement(travelMode, ref onPathCompletedCalledAt0, ref onPathCompletedCalledAt1, onPathCompleted);
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            GetComponent<Collider>();
+
+            if (collision.collider.CompareTag("GeneratedMeshObject"))
+            {
+                FlipDirection();
+            }
+        }
+
+        private void FlipDirection()
+        {
+            isGoingForward = !isGoingForward;
         }
     }
 }
