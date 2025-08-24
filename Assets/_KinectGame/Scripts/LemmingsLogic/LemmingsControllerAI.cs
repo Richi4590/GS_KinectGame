@@ -40,6 +40,7 @@ public class LemmingsControllerAI : MonoBehaviour
     private CustomTag lemmingCustomTags;
     private LemmingsMarchManager manager;
 
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();

@@ -32,6 +32,9 @@ namespace AYellowpaper.SerializedCollections
                     break;
                 case "reflector":
                     break;
+                case "light":
+                    g.GetComponentInChildren<Light>().range = longestObjectSide * 2.5f;
+                    break;
                 default:
                     break;
             }

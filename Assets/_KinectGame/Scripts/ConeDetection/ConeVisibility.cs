@@ -200,8 +200,10 @@ public class ConeTrigger : MonoBehaviour
         coneMesh.SetTriangles(triangles, 0);
         coneMesh.RecalculateNormals();
 
+        #if UNITY_EDITOR
         if (!Application.isPlaying)
         {
+            
             EditorApplication.delayCall += () =>
             {
                 if (this != null)
@@ -214,7 +216,7 @@ public class ConeTrigger : MonoBehaviour
         }
         else
             meshFilter.mesh = coneMesh;
-
+        #endif
     }
 
     void CreateRayLine(Vector3 start, Vector3 end)

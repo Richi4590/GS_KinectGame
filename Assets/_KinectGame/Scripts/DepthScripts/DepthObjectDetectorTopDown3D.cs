@@ -733,6 +733,15 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
 
         obj.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
 
+
+        Vector3 iconLocalScale = obj.transform.GetChild(1).localScale;
+
+        iconLocalScale.x /= depthTextureVisualDestinationMesh.transform.localScale.x;
+        iconLocalScale.y /= depthTextureVisualDestinationMesh.transform.localScale.z;
+
+        obj.transform.GetChild(1).localScale = iconLocalScale;
+        obj.transform.GetChild(1).GetComponent<SpriteRenderer>().color = obj.GetComponent<LineRenderer>().startColor;
+
         return obj;
     }
 

@@ -21,6 +21,8 @@ public class LemmingsMarchManager : MonoBehaviour
     public bool destroyLemmingsIfRespawns = false;
 
 
+    private AudioSource audioSource;
+
     public bool StartMarching
     {
         get => _startMarching;
@@ -34,6 +36,7 @@ public class LemmingsMarchManager : MonoBehaviour
         }
     }
 
+    [SerializeField] List<AudioClip> deathSounds;
     [SerializeField] private List<LemmingsControllerAI> spawnedLemmings = new List<LemmingsControllerAI>();
     [SerializeField] private List<LemmingsControllerAI> idleLemmings = new List<LemmingsControllerAI>();
 
@@ -41,6 +44,8 @@ public class LemmingsMarchManager : MonoBehaviour
 
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         foreach (Transform child in lemmingsSpawnRoot.transform)
         {
             Destroy(child.gameObject);
@@ -138,6 +143,8 @@ public class LemmingsMarchManager : MonoBehaviour
 
     private void LemmingDestroyed(LemmingsControllerAI destroyedLemming)
     {
+        audioSource.PlayOneShot(deathSounds[Random.Range(0, deathSounds.Count)]);
+
         destroyedLemming.OnDestroyEvent -= LemmingDestroyed;
         destroyedLemming.OnRespawnEvent -= LemmingRespawned;
         spawnedLemmings.Remove(destroyedLemming);
@@ -150,6 +157,8 @@ public class LemmingsMarchManager : MonoBehaviour
 
     private void LemmingRespawned(LemmingsControllerAI respawnedLemming)
     {
+        audioSource.pitch = Random.Range(0.85f, 1.15f);
+        audioSource.PlayOneShot(deathSounds[Random.Range(0, deathSounds.Count)]);
         RespawnLemming(respawnedLemming);
     }
 
