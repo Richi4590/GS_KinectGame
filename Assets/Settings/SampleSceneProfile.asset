@@ -12,16 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2db86121404754db890f4c8dfe81b2, type: 3}
   m_Name: Bloom
   m_EditorClassIdentifier: 
+<<<<<<< HEAD
   active: 1
+=======
+  active: 0
+>>>>>>> 1a280c26d4373020ec05a07c407f3bc1d96328d5
   skipIterations:
     m_OverrideState: 0
     m_Value: 1
   threshold:
+<<<<<<< HEAD
     m_OverrideState: 1
     m_Value: 1
   intensity:
     m_OverrideState: 1
     m_Value: 1
+=======
+    m_OverrideState: 0
+    m_Value: 27.65
+  intensity:
+    m_OverrideState: 0
+    m_Value: 0.02
+>>>>>>> 1a280c26d4373020ec05a07c407f3bc1d96328d5
   scatter:
     m_OverrideState: 0
     m_Value: 0.7
@@ -59,7 +71,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 899c54efeace73346a0a16faa3afe726, type: 3}
   m_Name: Vignette
   m_EditorClassIdentifier: 
+<<<<<<< HEAD
   active: 1
+=======
+  active: 0
+>>>>>>> 1a280c26d4373020ec05a07c407f3bc1d96328d5
   color:
     m_OverrideState: 0
     m_Value: {r: 0, g: 0, b: 0, a: 1}
@@ -68,7 +84,11 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
+<<<<<<< HEAD
     m_Value: 0.25
+=======
+    m_Value: 1
+>>>>>>> 1a280c26d4373020ec05a07c407f3bc1d96328d5
   smoothness:
     m_OverrideState: 1
     m_Value: 0.4
@@ -88,9 +108,9 @@ MonoBehaviour:
   m_Name: SampleSceneProfile
   m_EditorClassIdentifier: 
   components:
-  - {fileID: 849379129802519247}
   - {fileID: -7893295128165547882}
   - {fileID: -7011558710299706105}
+<<<<<<< HEAD
 --- !u!114 &849379129802519247
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -131,3 +151,5 @@ MonoBehaviour:
   maxNits:
     m_OverrideState: 0
     m_Value: 1000
+=======
+>>>>>>> 1a280c26d4373020ec05a07c407f3bc1d96328d5

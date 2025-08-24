@@ -28,7 +28,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     public MeshRenderer depthTextureVisualDestinationMesh;
     public Transform depthChildrenRootObject;
     public GameObject QRCodeVisualizer;
-    public ObjectCreationMode currentMode = ObjectCreationMode.ReuseObjectAndUpdate;
+    public ObjectCreationMode currentMode = ObjectCreationMode.InstantiateObjectAndDestroyPerFrame;
 
     [Header("Depth Settings")]
     [Min(0)] public int MinDepth = 500;
@@ -430,7 +430,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
         //Cv2.GaussianBlur(modifiedMask, modifiedMask, new Size(5, 5), 0);
 
         // Remove small specks
-        Cv2.MorphologyEx(modifiedMask, modifiedMask, MorphTypes.Open, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(morhologicalSpecRemoval, morhologicalSpecRemoval)));
+        //Cv2.MorphologyEx(modifiedMask, modifiedMask, MorphTypes.Open, Cv2.GetStructuringElement(MorphShapes.Rect, new Size(morhologicalSpecRemoval, morhologicalSpecRemoval)));
 
         if (!DEBUG_FloodFill_Mask)
             // Crop the image back to original size (remove the added border)
