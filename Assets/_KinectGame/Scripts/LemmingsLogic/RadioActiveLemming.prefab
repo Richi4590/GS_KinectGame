@@ -71,6 +71,8 @@ MonoBehaviour:
   animator: {fileID: 6284328798668687747}
   keyVisualized: {fileID: 8039365881356997938}
   keyGameObject: {fileID: 0}
+  deathAnimationPrefab: {fileID: 1566275352734414620, guid: 7f3eb83ee44520745a456ce4fc2a98df,
+    type: 3}
 --- !u!65 &8242198457534676320
 BoxCollider:
   m_ObjectHideFlags: 0

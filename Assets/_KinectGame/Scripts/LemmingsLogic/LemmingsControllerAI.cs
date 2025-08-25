@@ -21,6 +21,7 @@ public class LemmingsControllerAI : MonoBehaviour
     public event UnityAction<LemmingsControllerAI> OnRespawnEvent;
 
     public bool LemmingInitialized {get => lemmingInitialized;}
+    public GameObject deathAnimationPrefab;
 
     private State prevState = State.IdleWander;
     private List<string> TagsLemmingsHave = new List<string>();
@@ -225,6 +226,8 @@ public class LemmingsControllerAI : MonoBehaviour
 
     public void DestroyLemming()
     {
+        Instantiate(deathAnimationPrefab, this.transform.position, Quaternion.identity);
+
         if (keyGameObject != null)
         {
             keyGameObject.SetActive(true);
