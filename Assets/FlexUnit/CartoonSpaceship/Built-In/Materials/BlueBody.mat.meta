@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 79c61af9a46ec4bdd8bf81e9f323444a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 287099
+  packageName: Cartoon Low-Poly Spaceship
+  packageVersion: 1.0.0
+  assetPath: Assets/FlexUnit/CartoonSpaceship/Built-In/Materials/BlueBody.mat
+  uploadId: 669897

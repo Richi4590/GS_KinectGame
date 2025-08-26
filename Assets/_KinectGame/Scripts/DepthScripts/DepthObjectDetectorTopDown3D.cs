@@ -13,7 +13,7 @@ using OpenCvSharp.Util;
 using System.Runtime.InteropServices;
 using System.IO;
 
-public class DepthObjectDetectorTopDown3D : MonoBehaviour
+public class DepthObjectDetectorTopDown3D : GameConfigLoaderForClass
 {
     [Header("Object References")]
     public static DepthObjectDetectorTopDown3D Instance;
@@ -44,8 +44,6 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public float simplificationTolerance = 0.02f;
     [Min(0)] public float gaussianBlurAmount = 0;
     //[Min(0)] public int fixedSquareImageSizeArucoCode = 50;
-
-    public LayerMask layersToIgnoreMeshUpdates;  
 
     [Header("Object Settings")]
     public bool flipSpriteX = false;
@@ -79,7 +77,7 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     [Min(0)] public double extentTriangleMax = 0.75;
 
     [Header("Hu Moment Settings")]
-    [Min(0)] public bool useHuMoments = false;
+             public bool useHuMoments = false;
     [Min(0)] public double huCircleThreshold = 0.3; // Optional: lower = more circular
     [Min(0)] public double huStarThreshold = 0.25;  // Optional: higher = more "star"-like
 
@@ -110,6 +108,54 @@ public class DepthObjectDetectorTopDown3D : MonoBehaviour
     double scaleX;
     double scaleY;
     private bool DEBUG_FloodFill_Mask = false;
+
+    public override void LoadGameConfigForClass()
+    {
+        // Depth Settings
+        currentMode = (ObjectCreationMode)int.Parse(LoadGameConfig.gameConfigMap["currentMode"]);
+        framesToWait = int.Parse(LoadGameConfig.gameConfigMap["framesToWait"]);
+        SaveBinaryImage = bool.Parse(LoadGameConfig.gameConfigMap["SaveBinaryImage"]);
+
+        MinDepth = int.Parse(LoadGameConfig.gameConfigMap["MinDepth"]);
+        MaxDepth = int.Parse(LoadGameConfig.gameConfigMap["MaxDepth"]);
+        minBlobSize = int.Parse(LoadGameConfig.gameConfigMap["minBlobSize"]);
+        maxBlobSize = int.Parse(LoadGameConfig.gameConfigMap["maxBlobSize"]);
+        dilationIterations = int.Parse(LoadGameConfig.gameConfigMap["dilationIterations"]);
+        erosionIterations = int.Parse(LoadGameConfig.gameConfigMap["erosionIterations"]);
+        morhologicalSpecRemoval = int.Parse(LoadGameConfig.gameConfigMap["morhologicalSpecRemoval"]);
+        epsilonShapeRecognition = float.Parse(LoadGameConfig.gameConfigMap["epsilonShapeRecognition"]);
+        borderThickness = int.Parse(LoadGameConfig.gameConfigMap["borderThickness"]);
+        viewPortXOffset = float.Parse(LoadGameConfig.gameConfigMap["viewPortXOffset"]);
+        simplificationTolerance = float.Parse(LoadGameConfig.gameConfigMap["simplificationTolerance"]);
+        gaussianBlurAmount = float.Parse(LoadGameConfig.gameConfigMap["gaussianBlurAmount"]);
+
+        // Object Settings
+        flipSpriteX = bool.Parse(LoadGameConfig.gameConfigMap["flipSpriteX"]);
+        flipSpriteY = bool.Parse(LoadGameConfig.gameConfigMap["flipSpriteY"]);
+        flipDepthMapX = bool.Parse(LoadGameConfig.gameConfigMap["flipDepthMapX"]);
+        flipDepthMapY = bool.Parse(LoadGameConfig.gameConfigMap["flipDepthMapY"]);
+        maxAllowedMovementRadius = float.Parse(LoadGameConfig.gameConfigMap["maxAllowedMovementRadius"]);
+        collisionWallHeight = float.Parse(LoadGameConfig.gameConfigMap["collisionWallHeight"]);
+        objectFeatureRadiusMultiplier = float.Parse(LoadGameConfig.gameConfigMap["objectFeatureRadiusMultiplier"]);
+        visualizeWithLines = bool.Parse(LoadGameConfig.gameConfigMap["visualizeWithLines"]);
+        lineWidth = float.Parse(LoadGameConfig.gameConfigMap["lineWidth"]);
+
+        // Shape Detection Settings
+        circularityThreshold = double.Parse(LoadGameConfig.gameConfigMap["circularityThreshold"]);
+        solidityMinForBasicShapes = double.Parse(LoadGameConfig.gameConfigMap["solidityMinForBasicShapes"]);
+        solidityStarThreshold = double.Parse(LoadGameConfig.gameConfigMap["solidityStarThreshold"]);
+        squareAspectMin = double.Parse(LoadGameConfig.gameConfigMap["squareAspectMin"]);
+        squareAspectMax = double.Parse(LoadGameConfig.gameConfigMap["squareAspectMax"]);
+        extentRectMin = double.Parse(LoadGameConfig.gameConfigMap["extentRectMin"]);
+        extentSquareMin = double.Parse(LoadGameConfig.gameConfigMap["extentSquareMin"]);
+        extentTriangleMin = double.Parse(LoadGameConfig.gameConfigMap["extentTriangleMin"]);
+        extentTriangleMax = double.Parse(LoadGameConfig.gameConfigMap["extentTriangleMax"]);
+        useHuMoments = bool.Parse(LoadGameConfig.gameConfigMap["useHuMoments"]);
+        huCircleThreshold = double.Parse(LoadGameConfig.gameConfigMap["huCircleThreshold"]);
+        huStarThreshold = double.Parse(LoadGameConfig.gameConfigMap["huStarThreshold"]);
+        minContourArea = double.Parse(LoadGameConfig.gameConfigMap["minContourArea"]);
+    }
+
 
     void Awake()
     {

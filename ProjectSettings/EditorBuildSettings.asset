@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_KinectGame/MainSceneTopDown3D_2.0.unity
-    guid: 3e9ff5b3bdefd8b4a9ed1d30c4dd5528
+    path: Assets/_KinectGame/MainSceneTopDown3D_2.0_Night.unity
+    guid: 287256c90ff052c4a9393726214af775
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

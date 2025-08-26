@@ -254,8 +254,23 @@ public class LemmingsControllerAI : MonoBehaviour
 
     public void DestroyLemmingNoNotify()
     {
+        Destroy(this.gameObject);
+    }
+
+    public void DestroyLemmingNoDeath()
+    {
         if (manager.destroyLemmingsIfRespawns)
+        {
+            if (OnDestroyEvent != null)
+                OnDestroyEvent.Invoke(this);
+
             Destroy(this.gameObject);
-    }    
+        }
+        else
+        {
+            if (OnRespawnEvent != null)
+                OnRespawnEvent.Invoke(this);
+        }
+    }
 
 }

@@ -112,41 +112,47 @@ public class ConeTrigger : MonoBehaviour
 
     void FixedUpdate()
     {
-
         visibleTargets.Clear();
-
-        foreach (Transform child in transform)
-        {
-            Destroy(child.gameObject);
-        }
-
-        lineRenderers.Clear();
 
         float angleStep = ViewAngle / (RayCount - 1);
         Quaternion startRot = Quaternion.Euler(0, -_viewAngle / 2f, 0);
+
+        // Ensure we have enough line renderers preallocated
+        while (lineRenderers.Count < RayCount)
+        {
+            GameObject go = new GameObject("RayLine");
+            go.transform.parent = this.transform;
+
+            LineRenderer lr = go.AddComponent<LineRenderer>();
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            lr.startColor = rayColor;
+            lr.endColor = rayColor;
+            lr.startWidth = 0.2f;
+            lr.endWidth = 0.2f;
+            lr.numCapVertices = 2;
+
+            lineRenderers.Add(lr);
+        }
 
         for (int i = 0; i < RayCount; i++)
         {
             float angle = angleStep * i;
             Vector3 dir = transform.rotation * startRot * Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
-            Ray ray = new Ray(transform.position, dir);
             Vector3 endPoint;
-
-            if (Physics.Raycast(ray, out RaycastHit hit, ViewRadius, targetMask | obstaclesMask))
+            if (Physics.Raycast(transform.position, dir, out RaycastHit hit, ViewRadius, targetMask | obstaclesMask))
             {
-                endPoint = hit.point; 
+                endPoint = hit.point;
 
                 if (((1 << hit.collider.gameObject.layer) & targetMask) != 0)
                 {
                     visibleTargets.Add(hit.transform);
                     onSight.Invoke();
 
-                    if (AlsoSendMessages)
+                    if (AlsoSendMessages && Utilities.HasCustomTag(hit.collider.gameObject, TagsToReactTo))
                     {
-                        if (Utilities.HasCustomTag(hit.collider.gameObject, TagsToReactTo))
-                            foreach (string functionString in functionStrings)
-                                hit.collider.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
+                        foreach (string functionString in functionStrings)
+                            hit.collider.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
                     }
                 }
             }
@@ -158,11 +164,18 @@ public class ConeTrigger : MonoBehaviour
             if (drawRays)
             {
                 Debug.DrawLine(transform.position, endPoint, Color.red);
-                CreateRayLine(transform.position, endPoint);
+
+                LineRenderer lr = lineRenderers[i];
+                lr.positionCount = 2;
+                lr.SetPosition(0, transform.position);
+                lr.SetPosition(1, endPoint);
+                lr.enabled = true;
             }
-
+            else
+            {
+                lineRenderers[i].enabled = false;
+            }
         }
-
     }
 
     private void OnViewSettingsChanged()

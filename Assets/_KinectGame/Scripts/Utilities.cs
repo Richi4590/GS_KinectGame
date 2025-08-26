@@ -1,11 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
 public class Utilities : MonoBehaviour
 {
+    public static IEnumerable<T> FindGeneral<T>(bool includeInactive = false)
+    {
+        return UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).OfType<T>();
+    }
 
     public static bool IsInSelectedLayers(LayerMask layersToCheck, GameObject obj)
     {

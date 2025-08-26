@@ -1,0 +1,60 @@
+<GameXMLConfig>
+  <ConfigNodes>
+    <!-- Mode + Depth Settings -->
+    <Config name="currentMode">1</Config> <!-- 0: InstantiateObjectAndDestroyPerFrame OR 1: ReuseObjectAndUpdate -->
+    <Config name="framesToWait">10</Config>
+    <Config name="SaveBinaryImage">false</Config>
+	
+	<Config name="MinDepth">1750</Config>
+    <Config name="MaxDepth">1825</Config>
+    <Config name="minBlobSize">10</Config>
+    <Config name="maxBlobSize">100000</Config>
+    <Config name="dilationIterations">0</Config>
+    <Config name="erosionIterations">0</Config>
+    <Config name="morhologicalSpecRemoval">2</Config>
+    <Config name="epsilonShapeRecognition">0,005</Config>
+    <Config name="borderThickness">0</Config>
+    <Config name="viewPortXOffset">0,484</Config>
+    <Config name="simplificationTolerance">2</Config>
+    <Config name="gaussianBlurAmount">0</Config>
+
+    <!-- Object Settings -->
+    <Config name="flipSpriteX">false</Config>
+    <Config name="flipSpriteY">false</Config>
+    <Config name="flipDepthMapX">true</Config>
+    <Config name="flipDepthMapY">true</Config>
+    <Config name="maxAllowedMovementRadius">5</Config>
+    <Config name="collisionWallHeight">50</Config>
+    <Config name="objectFeatureRadiusMultiplier">1</Config>
+    <Config name="visualizeWithLines">true</Config>
+    <Config name="lineWidth">1</Config>
+
+    <!-- Shape Detection Settings -->
+    <Config name="circularityThreshold">0,75</Config>
+    <Config name="solidityMinForBasicShapes">0,6</Config>
+    <Config name="solidityStarThreshold">0,85</Config>
+    <Config name="squareAspectMin">1,1</Config>
+    <Config name="squareAspectMax">1,25</Config>
+    <Config name="extentRectMin">0,49</Config>
+    <Config name="extentSquareMin">0,0</Config>
+    <Config name="extentTriangleMin">0,25</Config>
+    <Config name="extentTriangleMax">0,49</Config>
+    <Config name="useHuMoments">false</Config>
+    <Config name="huCircleThreshold">0,0</Config>
+    <Config name="huStarThreshold">0,0</Config>
+    <Config name="minContourArea">100</Config>
+  </ConfigNodes>
+</GameXMLConfig>
+
+<!--
+-Template-
+
+<GameXMLConfig>
+  <ConfigNodes>
+	<Config name="test1">It still works!</Config>
+	<Config name="test2">3</Config>
+	<Config name="test3">1,5</Config>
+	<Config name="test4"><r>125</r><g>125</g> <b>125</b><a>255</a></Config>
+  </ConfigNodes>
+</GameXMLConfig>
+-->
