@@ -325,8 +325,8 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 1
   m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
+  m_Constraints: 126
+  m_CollisionDetection: 1
 --- !u!64 &7759854340579345937
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -466,6 +466,8 @@ GameObject:
   - component: {fileID: 3477548363285673990}
   - component: {fileID: 6008295669965049913}
   - component: {fileID: 4355416301829661068}
+  - component: {fileID: 1457236996882065764}
+  - component: {fileID: 8599117598688787982}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -572,3 +574,29 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!114 &1457236996882065764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7624343194794602681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6340ddb236e83934eb3ee7a4cf970497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isShape: 0
+--- !u!114 &8599117598688787982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7624343194794602681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6340ddb236e83934eb3ee7a4cf970497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isShape: 1

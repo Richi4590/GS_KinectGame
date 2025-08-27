@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class LoadRocketShip : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class LoadRocketShip : MonoBehaviour
     private int lemmingsOnBoard = 0;
 
     public List<MeshRenderer> renderers;
+    public UnityEvent rocketFullEvent;
     private MaterialPropertyBlock block;
 
 
@@ -36,7 +38,13 @@ public class LoadRocketShip : MonoBehaviour
 
     public void LemmingArrived()
     {
-        lemmingsOnBoard++;
-        SetShaderLoadLevelRocketShip(lemmingsOnBoard);
+        if (lemmingsOnBoard < requiredLemmings)
+        {
+            lemmingsOnBoard++;
+            SetShaderLoadLevelRocketShip(lemmingsOnBoard);
+        }
+
+        if (lemmingsOnBoard >= requiredLemmings)
+            rocketFullEvent.Invoke();
     }
 }

@@ -23,15 +23,21 @@ public class SendMesseger : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (Utilities.HasCustomTag(collision.gameObject, TagsToReactTo))
-            foreach (string functionString in functionStrings)
-                collision.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
+        if (enabled)
+        {
+            if (Utilities.HasCustomTag(collision.gameObject, TagsToReactTo))
+                foreach (string functionString in functionStrings)
+                    collision.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (Utilities.HasCustomTag(other.gameObject, TagsToReactTo))
-            foreach (string functionString in functionStrings)
-                other.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
+        if (enabled)
+        {
+            if (Utilities.HasCustomTag(other.gameObject, TagsToReactTo))
+                foreach (string functionString in functionStrings)
+                    other.gameObject.SendMessage(functionString, SendMessageOptions.DontRequireReceiver);
+        }
     }
 }

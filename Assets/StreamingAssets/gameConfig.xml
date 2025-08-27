@@ -43,6 +43,14 @@
     <Config name="huCircleThreshold">0,0</Config>
     <Config name="huStarThreshold">0,0</Config>
     <Config name="minContourArea">100</Config>
+	
+	<!-- Lights Scene -->
+	<Config name="lightRangeMultiplier">2,0</Config>
+	<Config name="lightIntensityMultiplier">2,0</Config>
+	
+	<!-- Light Circle Shape -->
+	<Config name="lightShapeRangeMultiplier">5,0</Config>
+	<Config name="lightShapeIntensityMultiplier">1,0</Config>
   </ConfigNodes>
 </GameXMLConfig>
 
