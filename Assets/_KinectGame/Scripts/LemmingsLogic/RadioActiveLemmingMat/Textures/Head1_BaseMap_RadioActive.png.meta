@@ -143,7 +143,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Head1_BaseMap_RadioActive_0: 8273505878583829224
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

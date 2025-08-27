@@ -644,7 +644,14 @@ public class DepthObjectDetectorTopDown3D : GameConfigLoaderForClass
 
                         if (!childPlaneObj.TryGetComponent<MeshCollider>(out var childMeshCollider))
                             childMeshCollider = obj.AddComponent<MeshCollider>();
-                        childMeshCollider.sharedMesh = planeMesh;
+
+                        try
+                        {
+                            childMeshCollider.sharedMesh = planeMesh; 
+                        } catch (Exception ex)
+                        {
+                            Debug.Log(ex + ", " + childMeshCollider.sharedMesh.vertexCount);
+                        }
 
                         //------------
 
@@ -779,14 +786,15 @@ public class DepthObjectDetectorTopDown3D : GameConfigLoaderForClass
 
         obj.transform.localScale = depthTextureVisualDestinationMesh.transform.localScale;
 
+            Vector3 iconLocalScale = obj.transform.GetChild(1).localScale;
 
-        Vector3 iconLocalScale = obj.transform.GetChild(1).localScale;
+            iconLocalScale.x /= depthTextureVisualDestinationMesh.transform.localScale.x;
+            iconLocalScale.y /= depthTextureVisualDestinationMesh.transform.localScale.z;
 
-        iconLocalScale.x /= depthTextureVisualDestinationMesh.transform.localScale.x;
-        iconLocalScale.y /= depthTextureVisualDestinationMesh.transform.localScale.z;
+            obj.transform.GetChild(1).localScale = iconLocalScale;
+            obj.transform.GetChild(1).GetComponent<SpriteRenderer>().color = obj.GetComponent<LineRenderer>().startColor;
+        
 
-        obj.transform.GetChild(1).localScale = iconLocalScale;
-        obj.transform.GetChild(1).GetComponent<SpriteRenderer>().color = obj.GetComponent<LineRenderer>().startColor;
 
         return obj;
     }
@@ -1572,18 +1580,20 @@ public class DepthObjectDetectorTopDown3D : GameConfigLoaderForClass
         if (circularity > circularityThreshold && solidity > solidityMinForBasicShapes)
             return "Circle";
 
+        if (solidity > solidityMinForBasicShapes && extent >= extentTriangleMin && extent <= extentTriangleMax)
+            return "Triangle";
+
         if (extent > extentSquareMin && aspectRatio >= squareAspectMin && aspectRatio <= squareAspectMax && solidity > solidityMinForBasicShapes)
             return "Square";
 
+        /*
         if (extent > extentRectMin && solidity > solidityMinForBasicShapes &&
             (aspectRatio < squareAspectMin || aspectRatio > squareAspectMax))
             return "Rectangle";
 
         //if (solidity < solidityStarThreshold && extent < extentTriangleMin)
             //return "Star";
-
-        if (solidity > solidityMinForBasicShapes && extent >= extentTriangleMin && extent <= extentTriangleMax)
-            return "Triangle";
+        */
 
         return "Default";
     }
