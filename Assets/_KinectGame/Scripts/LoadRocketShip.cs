@@ -10,6 +10,7 @@ public class LoadRocketShip : MonoBehaviour
 
     public List<MeshRenderer> renderers;
     public UnityEvent rocketFullEvent;
+    public Animation animationRocket;
     private MaterialPropertyBlock block;
 
 
@@ -45,6 +46,9 @@ public class LoadRocketShip : MonoBehaviour
         }
 
         if (lemmingsOnBoard >= requiredLemmings)
+        {
             rocketFullEvent.Invoke();
+            animationRocket.Play();
+        }
     }
 }
