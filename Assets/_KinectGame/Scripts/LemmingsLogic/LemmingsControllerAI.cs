@@ -137,11 +137,13 @@ public class LemmingsControllerAI : MonoBehaviour
 
         if (currentState == State.IdleWander)
         {
-            animator.SetInteger("State", 1);
+            if (animator.HasParameterOfType("State", AnimatorControllerParameterType.Int))
+                animator.SetInteger("State", 1);
         }
         else
         {
-            animator.SetInteger("State", 2);
+            if (animator.HasParameterOfType("State", AnimatorControllerParameterType.Int))
+                animator.SetInteger("State", 2);
         }
     }
 

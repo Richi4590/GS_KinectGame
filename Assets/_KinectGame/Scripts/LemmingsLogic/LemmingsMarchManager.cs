@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -20,6 +21,7 @@ public class LemmingsMarchManager : MonoBehaviour
     public Transform exitPoint;
     public bool destroyLemmingsIfRespawns = false;
 
+    private CoroutineTracker marchingCoroutine;
 
     private AudioSource audioSource;
 
@@ -52,12 +54,20 @@ public class LemmingsMarchManager : MonoBehaviour
         }
 
         SpawnLemmings();
-        StartCoroutine(MarchingSequenceLoop());
-    }
+        marchingCoroutine = new CoroutineTracker(this, MarchingSequenceLoop());
 
+        marchingCoroutine.Start();
+    }
+     
+    private void Update()
+    {
+        if (!marchingCoroutine.IsRunning && gameObject.activeInHierarchy)
+            marchingCoroutine?.Start();
+    }
+     
     private void OnValidate()
     {
-        if (Application.isPlaying)
+        if (Application.isPlaying && gameObject.activeInHierarchy)
         {
             StartCoroutine(OnViewSettingsChangedCoroutine());
         }
@@ -83,11 +93,11 @@ public class LemmingsMarchManager : MonoBehaviour
     public IEnumerator MarchingSequenceLoop()
     {
         yield return null;
-
+            
         Vector3 flatDirection = exitPoint.forward.normalized;
         flatDirection.y = 0; // Flatten it to the XZ plane
 
-        while (true)
+        while (gameObject.activeInHierarchy)
         {
             if (_startMarching)
             {
@@ -278,5 +288,12 @@ public class LemmingsMarchManager : MonoBehaviour
             Gizmos.DrawLine(end, end + right * arrowHeadLength);
             Gizmos.DrawLine(end, end + left * arrowHeadLength);
         }
+    }
+
+    private void OnDestroy()
+    {
+        marchingCoroutine.StopAndCleanup();
+        marchingCoroutine = null;
+
     }
 }

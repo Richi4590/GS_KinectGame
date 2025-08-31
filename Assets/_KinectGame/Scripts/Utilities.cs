@@ -1,11 +1,11 @@
-﻿using System.Collections;
+﻿using OpenCvSharp.Tracking;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
-using UnityEditor;
+using Unity.VisualScripting;
 using UnityEngine;
 
-public class Utilities : MonoBehaviour
+public static class Utilities
 {
     public static IEnumerable<T> FindGeneral<T>(bool includeInactive = false)
     {
@@ -230,5 +230,68 @@ public class Utilities : MonoBehaviour
 
         // Capsule area = cylindrical area + 2 hemispherical areas
         return (2 * Mathf.PI * radius * height) + (2 * Mathf.PI * Mathf.Pow(radius, 2)); // Cylinder + hemispheres
+    }
+
+    public static bool HasParameterOfType(this Animator self, string name, AnimatorControllerParameterType type)
+    {
+        var parameters = self.parameters;
+        foreach (var currParam in parameters)
+        {
+            if (currParam.type == type && currParam.name == name)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+     
+    public static IEnumerator IsRunning(this IEnumerator routine, System.Action<bool> setRunning)
+    {
+        setRunning(true);
+        yield return routine;
+        setRunning(false);
+    }
+}
+
+public class CoroutineTracker
+{
+    private bool running;
+    private Coroutine coroutine;
+    private MonoBehaviour owner;
+    private IEnumerator routine;
+    public bool IsRunning => running;
+
+    public CoroutineTracker(MonoBehaviour owner, IEnumerator routine)
+    {
+        this.owner = owner;
+        this.routine = routine;
+    }
+
+    private IEnumerator Wrap(IEnumerator routine)
+    {
+        running = true;
+        yield return routine; // run the actual coroutine
+        running = false;      // only happens if it ends naturally
+    }
+
+    public void Start()
+    {
+        coroutine = owner.StartCoroutine(Wrap(routine));
+    }
+
+    public void Stop()
+    {
+        if (coroutine != null)
+        {
+            owner.StopCoroutine(coroutine);
+            running = false; // force reset when stopped manually
+        }
+    }
+
+    public void StopAndCleanup()
+    {
+        Stop();
+
+        coroutine = null;
     }
 }
