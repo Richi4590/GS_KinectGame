@@ -5,8 +5,8 @@
     <Config name="framesToWait">10</Config>
     <Config name="SaveBinaryImage">false</Config>
 	
-	<Config name="MinDepth">1750</Config>
-    <Config name="MaxDepth">1825</Config>
+	  <Config name="MinDepth">1990</Config>
+    <Config name="MaxDepth">2008</Config>
     <Config name="minBlobSize">10</Config>
     <Config name="maxBlobSize">100000</Config>
     <Config name="dilationIterations">0</Config>
@@ -14,8 +14,7 @@
     <Config name="morhologicalSpecRemoval">2</Config>
     <Config name="epsilonShapeRecognition">0,005</Config>
     <Config name="borderThickness">0</Config>
-    <Config name="viewPortXOffset">0,484</Config>
-    <Config name="simplificationTolerance">2</Config>
+    <Config name="simplificationTolerance">1</Config>
     <Config name="gaussianBlurAmount">0</Config>
 
     <!-- Object Settings -->
@@ -51,6 +50,11 @@
 	<!-- Light Circle Shape -->
 	<Config name="lightShapeRangeMultiplier">5,0</Config>
 	<Config name="lightShapeIntensityMultiplier">1,0</Config>
+
+    <!--Kinect Camera Settings-->
+    <Config name="kinectCameraHeight">76</Config>
+    <Config name="kinectCameraScale">235</Config>
+    <Config name="viewPortXOffset">0,5028</Config>
   </ConfigNodes>
 </GameXMLConfig>
 
